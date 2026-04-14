@@ -733,17 +733,35 @@
 
     function updateUIStatus(open) {
       const btn = document.getElementById("btn-submit");
+      const badge = document.getElementById("header-badge");
+      const closedWall = document.getElementById("closed-wall");
+      const mainForm = document.getElementById("main-form");
 
-      if (!btn) return;
+      if (!btn || !badge) return;
 
       if (!open) {
         btn.disabled = true;
-        btn.textContent = "Titipaan sedang tutup";
+        btn.textContent = "Toko Sedang Tutup";
         btn.style.opacity = "0.5";
+
+        badge.textContent = "Jastip Tutup";
+        badge.classList.remove("badge-open");
+        badge.classList.add("badge-closed");
+
+        mainForm.style.display = "none";
+        closedWall.style.display = "flex";
+
       } else {
         btn.disabled = false;
         btn.textContent = "Konfirmasi Pesanan";
         btn.style.opacity = "1";
+
+        badge.textContent = "Jastip Buka";
+        badge.classList.remove("badge-closed");
+        badge.classList.add("badge-open");
+
+        mainForm.style.display = "block";
+        closedWall.style.display = "none";
       }
     }
 

@@ -736,35 +736,34 @@
       const badge = document.getElementById("header-badge");
       const closedWall = document.getElementById("closed-wall");
       const mainForm = document.getElementById("main-form");
+      const headerInfo = document.getElementById("header-info");
 
-      if (!btn || !badge) return;
+      console.log("UPDATE STATUS:", open);
 
-      if (!open) {
-        btn.disabled = true;
-        btn.textContent = "Toko Sedang Tutup";
-        btn.style.opacity = "0.5";
+      if (btn) {
+        btn.disabled = !open;
+        btn.textContent = open ? "Konfirmasi Pesanan" : "Toko Sedang Tutup";
+        btn.style.opacity = open ? "1" : "0.5";
+      }
 
-        badge.textContent = "Jastip Tutup";
-        badge.classList.remove("badge-open");
-        badge.classList.add("badge-closed");
+      if (badge) {
+        badge.textContent = open ? "Buka" : "Tutup";
+        badge.classList.toggle("badge-open", open);
+        badge.classList.toggle("badge-closed", !open);
+      }
 
-        mainForm.style.display = "none";
-        closedWall.style.display = "flex";
+      if (headerInfo) {
+        headerInfo.style.display = open ? "block" : "none";
+      }
 
-      } else {
-        btn.disabled = true;
-        btn.textContent = "Konfirmasi Pesanan";
-        btn.style.opacity = "1";
+      if (mainForm) {
+        mainForm.style.display = open ? "block" : "none";
+      }
 
-        badge.textContent = "Jastip Buka";
-        badge.classList.remove("badge-closed");
-        badge.classList.add("badge-open");
-
-        mainForm.style.display = "block";
-        closedWall.style.display = "none";
+      if (closedWall) {
+        closedWall.style.display = open ? "none" : "flex";
       }
     }
-
     /* =========================
        QTY
     ========================= */
@@ -963,10 +962,10 @@
   </script>
 
   <div class="header">
-    <div class="header-logo">Jastitipaan ☀️</div>
+    <div class="header-logo">Jasatitipaan ☀️</div>
     <div style="display:flex;align-items:center;gap:10px">
-      <div class="header-info">Order tutup jam 10.45 WIB</div>
-      <span id="header-badge" class="badge-status badge-open">Open</span>
+      <div class="header-info" id="header-info">Order tutup jam 10.45 WIB</div>
+      <!-- <span id="header-badge" class="badge-status badge-open">Open</span> -->
     </div>
   </div>
 
@@ -984,8 +983,8 @@
     <div class="main">
 
       <div class="steps">
-        <div class="step active">1. Pilih menu</div>
-        <div class="step active">2. Data diri</div>
+        <div class="step active">1. Pilih Menu</div>
+        <div class="step active">2. Isi Data diri</div>
         <div class="step active">3. Bayar</div>
       </div>
 

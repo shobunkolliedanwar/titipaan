@@ -695,6 +695,11 @@
       orderBy
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+    import {
+      getAuth,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
     /* =========================
        FIREBASE CONFIG
     ========================= */
@@ -710,11 +715,18 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    /* =========================
-       CONFIG
-    ========================= */
-    const ADMIN_PASSWORD = "jastip123";
+    import { onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("app").classList.add("visible");
+        init();
+      }
+    });
 
     /* =========================
        STATE
@@ -780,20 +792,21 @@
     /* =========================
        LOGIN
     ========================= */
-    window.doLogin = function () {
+    window.doLogin = async function () {
+      const email = document.getElementById("login-email").value;
       const pass = document.getElementById("login-pass").value;
 
-      if (pass !== ADMIN_PASSWORD) {
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("app").classList.add("visible");
+
+        init();
+      } catch (err) {
+        console.error(err);
         document.getElementById("login-error").style.display = "block";
-        return;
       }
-
-      document.getElementById("login-screen").style.display = "none";
-      document.getElementById("app").classList.add("visible");
-
-      debug("LOGIN SUCCESS", true);
-
-      init();
     };
 
     window.lihatBukti = function (url) {
@@ -1286,8 +1299,13 @@
       <div class="login-title">Admin Panel</div>
       <div class="login-sub">Titipaan — masuk dengan password admin</div>
       <div class="login-field">
+        <label>EMAIL</label>
+        <input type="email" id="login-email" placeholder="admin@email.com">
+      </div>
+
+      <div class="login-field">
         <label>PASSWORD</label>
-        <input type="password" id="login-pass" placeholder="••••••••" autofocus>
+        <input type="password" id="login-pass" placeholder="••••••••">
       </div>
       <div class="login-error" id="login-error">Password salah. Coba lagi.</div>
       <button class="btn-primary-login" onclick="doLogin()">Masuk</button>

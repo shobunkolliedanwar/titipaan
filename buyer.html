@@ -548,6 +548,101 @@
     .toast.show {
       opacity: 1;
     }
+
+    /* PREMIUM FOOTER */
+    .footer-premium {
+      background: var(--text);
+      color: var(--bg);
+      margin-top: 3rem;
+      padding-top: 2rem;
+    }
+
+    .footer-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem 2rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .footer-brand {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .footer-tagline {
+      font-size: 13px;
+      opacity: 0.7;
+      line-height: 1.5;
+    }
+
+    .footer-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+
+    .footer-link {
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    .footer-cta {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .footer-cta:hover {
+      opacity: 0.9;
+    }
+
+    .footer-cta:active {
+      transform: scale(0.96);
+    }
+
+    .footer-small {
+      font-size: 11px;
+      opacity: 0.6;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+      padding: 1rem;
+      font-size: 12px;
+      opacity: 0.6;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .footer-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .footer-col {
+        align-items: center;
+      }
+    }
   </style>
 </head>
 
@@ -602,6 +697,9 @@
     const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpu7jpybe/image/upload";
     const UPLOAD_PRESET = "titipaan";
 
+    const ONGKIR = 2000;
+    const noteCache = {};
+
     /* =========================
        DEBUG HELPER
     ========================= */
@@ -613,6 +711,11 @@
        STATE
     ========================= */
     let qty = {};
+    let takimo = {
+      items: [],
+      size: 5000,
+      note: ""
+    };
     let uploadedFile = null;
 
     /* =========================
@@ -625,33 +728,76 @@
         icon: "🍗",
         desc: "Makanan",
         menu: [
-          { id: "a1", nama: "Ayam bakar", harga: 18000, ket: "Nasi + lalapan + sambal" },
-          { id: "a2", nama: "Ayam geprek", harga: 17000, ket: "Nasi + sambal geprek" },
-          { id: "a3", nama: "Ayam penyet", harga: 17000, ket: "Nasi + tempe + sambal" },
-          { id: "a4", nama: "Lele goreng", harga: 16000, ket: "Nasi + lalapan + sambal" },
+          { id: "a1", nama: "Nasi Ayam", harga: 22000, ket: "Bakar / Goreng" },
+          { id: "a2", nama: "Nasi Ikan Nila", harga: 22000, ket: "Bakar / Goreng" },
+          { id: "a3", nama: "Nasi Lele", harga: 15000, ket: "Bakar / Goreng" },
+
+          { id: "a4", nama: "Ayam (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
+          { id: "a5", nama: "Ikan Nila (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
+          { id: "a6", nama: "Lele (Tanpa Nasi)", harga: 10000, ket: "Bakar / Goreng" },
+
+          { id: "a7", nama: "Tahu / Tempe", harga: 3000, ket: "Goreng" },
+          { id: "a8", nama: "Sate Usus / Kulit / Ati Ampela", harga: 5000, ket: "Tambahan" },
         ]
       },
       {
         id: "toko_b",
-        nama: "Ketoprak & Gado-gado Pak Hendra",
-        icon: "🥗",
-        desc: "Makanan tradisional",
+        nama: "Ayam Bakar Viar Biru",
+        icon: "🍗",
+        desc: "Makanan",
         menu: [
-          { id: "b1", nama: "Ketoprak", harga: 14000, ket: "Tahu + bihun + bumbu kacang" },
-          { id: "b2", nama: "Gado-gado", harga: 14000, ket: "Sayur + lontong + bumbu kacang" },
-          { id: "b3", nama: "Lotek", harga: 13000, ket: "Sayur rebus + bumbu oncom" },
+          { id: "a1", nama: "Nasi Ayam", harga: 22000, ket: "Bakar / Goreng" },
+          { id: "a2", nama: "Nasi Ikan Nila", harga: 22000, ket: "Bakar / Goreng" },
+          { id: "a3", nama: "Nasi Lele", harga: 15000, ket: "Bakar / Goreng" },
+          { id: "a4", nama: "Nasi Ikan Kembung", harga: 22000, ket: "Bakar / Goreng" },
+
+          { id: "a5", nama: "Ayam (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
+          { id: "a6", nama: "Ikan Nila (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
+          { id: "a7", nama: "Lele (Tanpa Nasi)", harga: 10000, ket: "Bakar / Goreng" },
+
+          { id: "a8", nama: "Tahu / Tempe", harga: 3000, ket: "Goreng" },
+          { id: "a9", nama: "Sate Usus / Kulit / Ati Ampela", harga: 5000, ket: "Tambahan" },
         ]
       },
       {
         id: "toko_c",
-        nama: "Nasi & Mie Bu Dewi",
-        icon: "🍜",
-        desc: "Nasi goreng, mie, dll",
+        nama: "Ayam Cabai Hijau (Samping Trembesi)",
+        icon: "🍗",
+        desc: "Makanan",
         menu: [
-          { id: "c1", nama: "Nasi goreng", harga: 16000, ket: "Telur + kerupuk + acar" },
-          { id: "c2", nama: "Mie goreng", harga: 15000, ket: "Telur + sayur + kerupuk" },
-          { id: "c3", nama: "Nasi uduk", harga: 15000, ket: "Nasi + ayam suwir + emping" },
-          { id: "c4", nama: "Mie ayam", harga: 15000, ket: "Mie + ayam + bakso" },
+          { id: "a1", nama: "Nasi Ayam", harga: 22000, ket: "Goreng" },
+          { id: "a2", nama: "Ayam (Tanpa Nasi)", harga: 17000, ket: "Goreng" },
+          { id: "a3", nama: "Tahu / Tempe", harga: 3000, ket: "Goreng" },
+          { id: "a4", nama: "Sate Usus / Kulit / Ati Ampela", harga: 5000, ket: "Tambahan" },
+        ]
+      },
+      {
+        id: "toko_d",
+        nama: "TAKIMO",
+        icon: "🍢",
+        desc: "Tahu Kentang Cimol",
+        menu: [
+          { id: "d1", nama: "TAKIMO Builder", harga: 0, ket: "Custom mix" }
+        ]
+      },
+      {
+        id: "toko_e",
+        nama: "Gado - Gado",
+        icon: "🥗",
+        desc: "Makanan tradisional",
+        menu: [
+          { id: "e1", nama: "Gado - Gado Aja", harga: 12000, ket: "Tanpa telur" },
+          { id: "e2", nama: "Gado - Gado + Telor Dadar", harga: 17000, ket: "Dengan telur dadar" },
+        ]
+      },
+      {
+        id: "toko_f",
+        nama: "Ketoprak",
+        icon: "🍲",
+        desc: "Makanan tradisional",
+        menu: [
+          { id: "f1", nama: "Ketoprak Aja", harga: 12000, ket: "Tanpa telur" },
+          { id: "f2", nama: "Ketoprak + Telor Dadar", harga: 17000, ket: "Dengan telur dadar" },
         ]
       }
     ];
@@ -673,42 +819,109 @@
       setTimeout(() => t.classList.remove("show"), 2500);
     }
 
+    function saveNotes() {
+      document.querySelectorAll("input[id^='note-']").forEach(input => {
+        noteCache[input.id] = input.value;
+      });
+    }
+
+    function restoreNotes() {
+      Object.keys(noteCache).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = noteCache[id];
+      });
+    }
+
     /* =========================
        RENDER MENU
     ========================= */
     function renderMenus() {
       const container = document.getElementById("toko-container");
 
-      container.innerHTML = TOKO.map(toko => `
-    <div class="store-block">
-      <div class="store-header">
-        <div class="store-icon">${toko.icon}</div>
-        <div>
-          <div class="store-name">${toko.nama}</div>
-          <div class="store-desc">${toko.desc}</div>
-        </div>
-      </div>
+      container.innerHTML = TOKO.map(toko => {
 
-      ${toko.menu.map(m => `
-        <div class="menu-item">
-          <div class="menu-info">
+        // 🔥 SPECIAL CASE TAKIMO
+        if (toko.id === "toko_d") {
+          return `
+        <div class="store-block">
+          <div class="store-header">
+            <div class="store-icon">${toko.icon}</div>
+            <div>
+              <div class="store-name">${toko.nama}</div>
+              <div class="store-desc">${toko.desc}</div>
+            </div>
+          </div>
+
+          <div style="padding:1rem">
+
+            <div class="section-title">Pilih Isi</div>
+
+            <label><input type="checkbox" onchange="toggleTakimo('tahu')"> Tahu</label><br>
+            <label><input type="checkbox" onchange="toggleTakimo('kentang')"> Kentang</label><br>
+            <label><input type="checkbox" onchange="toggleTakimo('cimol')"> Cimol</label><br>
+
+            <div class="section-title" style="margin-top:1rem">Harga</div>
+            <select onchange="setTakimoSize(this.value)">
+              <option value="5000">5K</option>
+              <option value="10000">10K</option>
+            </select>
+
+            <div class="section-title" style="margin-top:1rem">Catatan Rasa</div>
+
+            <input 
+              type="text" 
+              id="takimo-note"
+              placeholder="Contoh: Pedas Manis / Pedas Barbeque / Campur"
+              style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;"
+            />
+
+            <button type="button" class="btn-outline" onclick="addTakimo()">
+              + Tambah TAKIMO
+            </button>
+
+          </div>
+        </div>
+      `;
+        }
+
+        // NORMAL MENU
+        return `
+      <div class="store-block">
+        <div class="store-header">
+          <div class="store-icon">${toko.icon}</div>
+          <div>
+            <div class="store-name">${toko.nama}</div>
+            <div class="store-desc">${toko.desc}</div>
+          </div>
+        </div>
+
+        ${toko.menu.map(m => `
+          <div class="menu-item">
+            <div class="menu-info">
             <div class="menu-name">${m.nama}</div>
             <div class="menu-ket">${m.ket}</div>
+
+            <input 
+              type="text" 
+              placeholder="Catatan (opsional)"
+              id="note-${m.id}"
+              style="margin-top:6px;width:100%;padding:6px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;"
+            />
           </div>
 
-          <div class="menu-harga">Rp${fmt(m.harga)}</div>
+            <div class="menu-harga">Rp${fmt(m.harga)}</div>
 
-          <div class="qty-wrap">
-            <button onclick="changeQty('${m.id}', -1)">−</button>
-            <span id="qty-${m.id}">${qty[m.id]}</span>
-            <button onclick="changeQty('${m.id}', 1)">+</button>
+            <div class="qty-wrap">
+              <button onclick="changeQty('${m.id}', -1)">−</button>
+              <span id="qty-${m.id}">${qty[m.id]}</span>
+              <button onclick="changeQty('${m.id}', 1)">+</button>
+            </div>
           </div>
-        </div>
-      `).join("")}
-    </div>
-  `).join("");
+        `).join("")}
+      </div>
+    `;
+      }).join("");
     }
-
     function renderQRIS() {
       const wrap = document.getElementById("qris-wrap");
 
@@ -768,9 +981,74 @@
        QTY
     ========================= */
     window.changeQty = function (id, delta) {
-      qty[id] = Math.max(0, (qty[id] || 0) + delta);
-      document.getElementById("qty-" + id).textContent = qty[id];
+      const noteInput = document.getElementById("note-" + id);
+      const note = noteInput ? noteInput.value.trim() : "";
+
+      // 🔥 VALIDASI NOTE WAJIB SAAT TAMBAH
+      if (delta > 0 && !note) {
+        showToast("Isi catatan dulu ya");
+        noteInput.focus();
+        return;
+      }
+
+      const noteSafe = note ? note.replace(/\s/g, "-") : "normal";
+
+      const finalId = `${id}_${noteSafe}`; // 🔥 combine id + note
+
+      qty[finalId] = Math.max(0, (qty[finalId] || 0) + delta);
+
+      // update angka di UI (tetap pakai base id)
+      const display = Object.keys(qty)
+        .filter(k => k.startsWith(id + "_"))
+        .reduce((sum, k) => sum + qty[k], 0);
+
+      document.getElementById("qty-" + id).textContent = display;
+
+      if (noteInput) noteInput.value = "";
       renderRekap();
+    };
+
+    window.toggleTakimo = function (item) {
+      if (takimo.items.includes(item)) {
+        takimo.items = takimo.items.filter(i => i !== item);
+      } else {
+        takimo.items.push(item);
+      }
+    };
+
+    window.setTakimoNote = function () {
+      takimo.note = document.getElementById("takimo-note").value;
+    };
+
+    window.setTakimoSize = function (size) {
+      takimo.size = parseInt(size);
+    };
+
+    window.addTakimo = function () {
+      const noteInput = document.getElementById("takimo-note");
+      takimo.note = noteInput.value.trim();
+
+      if (takimo.items.length === 0) {
+        showToast("Pilih isi TAKIMO dulu");
+        return;
+      }
+
+      // ⚠️ note optional (boleh kosong kalau mau)
+      const noteSafe = takimo.note ? takimo.note.replace(/\s/g, "-") : "normal";
+
+      // 🔥 FIX: include SIZE di ID
+      const id = `takimo_${takimo.items.join("_")}_${takimo.size}_${noteSafe}`;
+
+      qty[id] = (qty[id] || 0) + 1;
+
+      renderRekap();
+
+      takimo.items = [];
+      takimo.note = "";
+      document.getElementById("takimo-note").value = "";
+
+      // uncheck checkbox (khusus TAKIMO aja)
+      document.querySelectorAll('#toko-container input[type="checkbox"]').forEach(c => c.checked = false);
     };
 
     /* =========================
@@ -779,18 +1057,68 @@
     function getItems() {
       const items = [];
 
-      TOKO.forEach(toko => {
-        toko.menu.forEach(m => {
-          if (qty[m.id] > 0) {
+      // =========================
+      // NORMAL ITEMS (WITH NOTE)
+      // =========================
+      Object.keys(qty).forEach(key => {
+
+        // skip TAKIMO
+        if (key.startsWith("takimo_")) return;
+
+        if (qty[key] > 0) {
+
+          // contoh key: a1_pedas-manis
+          const parts = key.split("_");
+          const baseId = parts[0];
+          const note = parts.slice(1).join(" ").replace(/-/g, " ");
+
+          // cari menu dari TOKO
+          let foundMenu = null;
+          let tokoName = "";
+
+          TOKO.forEach(toko => {
+            toko.menu.forEach(m => {
+              if (m.id === baseId) {
+                foundMenu = m;
+                tokoName = toko.nama;
+              }
+            });
+          });
+
+          if (foundMenu) {
             items.push({
-              nama: m.nama,
-              harga: m.harga,
-              qty: qty[m.id],
-              sub: m.harga * qty[m.id],
-              toko: toko.nama
+              nama: note !== "normal"
+                ? `${foundMenu.nama} (${note})`
+                : foundMenu.nama,
+              harga: foundMenu.harga,
+              qty: qty[key],
+              sub: foundMenu.harga * qty[key],
+              toko: tokoName
             });
           }
-        });
+        }
+      });
+
+      // =========================
+      // TAKIMO ITEMS (tetap)
+      // =========================
+      Object.keys(qty).forEach(id => {
+        if (id.startsWith("takimo_") && qty[id] > 0) {
+
+          const parts = id.replace("takimo_", "").split("_");
+
+          const note = parts.pop().replace(/-/g, " ");
+          const size = parseInt(parts.pop());
+          const isi = parts;
+
+          items.push({
+            nama: `TAKIMO (${isi.join(" + ")}) - ${note}`,
+            harga: size,
+            qty: qty[id],
+            sub: size * qty[id],
+            toko: "TAKIMO"
+          });
+        }
       });
 
       return items;
@@ -812,10 +1140,17 @@
       let total = 0;
 
       box.innerHTML = items.map(i => {
-        total += i.sub;
+        const subTotal = i.sub;
+        const ongkirItem = ONGKIR * i.qty; // ✅ PER QTY
+
+        total += subTotal + ongkirItem;
+
         return `
       <div>
-        ${i.nama} x${i.qty} = Rp${fmt(i.sub)}
+        ${i.nama} x${i.qty} = Rp${fmt(subTotal)}
+        <div style="font-size:11px;color:gray">
+          + Ongkir Rp${fmt(ongkirItem)} (${i.qty} x ${fmt(ONGKIR)})
+        </div>
       </div>
     `;
       }).join("");
@@ -872,7 +1207,9 @@
         }
       });
 
+      saveNotes();
       renderMenus();
+      restoreNotes();
       renderRekap();
       renderQRIS();
     });
@@ -906,7 +1243,9 @@
       try {
         const imageUrl = await uploadToCloudinary(uploadedFile);
 
-        const total = items.reduce((a, i) => a + i.sub, 0);
+        const total = items.reduce((a, i) => {
+          return a + i.sub + (ONGKIR * i.qty);
+        }, 0);
 
         const payload = {
           nama,
@@ -962,7 +1301,7 @@
   </script>
 
   <div class="header">
-    <div class="header-logo">Jasatitipaan ☀️</div>
+    <div class="header-logo">Titipaan ☀️</div>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="header-info" id="header-info">Order tutup jam 10.45 WIB</div>
       <!-- <span id="header-badge" class="badge-status badge-open">Open</span> -->
@@ -1005,16 +1344,8 @@
               <input type="text" id="nama" placeholder="Nama kamu">
             </div>
             <div class="field">
-              <label>MEJA / LOKASI</label>
-              <input type="text" id="meja" placeholder="Contoh: Lt.3 meja pojok">
-            </div>
-            <div class="field">
               <label>NO. HP (opsional)</label>
               <input type="tel" id="telp" placeholder="08xx">
-            </div>
-            <div class="field">
-              <label>CATATAN TAMBAHAN</label>
-              <input type="text" id="catatan" placeholder="Tidak pakai sambal, dll">
             </div>
           </div>
         </div>
@@ -1064,7 +1395,7 @@
         Konfirmasi Pesanan & Bayar
       </button>
       <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:12px">
-        Pesanan akan dikonfirmasi oleh mas aan dan sat set.
+        Pesanan akan dikonfirmasi oleh mas aan langsung sat set.
       </p>
     </div>
   </div>
@@ -1082,6 +1413,42 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <footer class="footer-premium">
+    <div class="footer-container">
+
+      <!-- BRAND -->
+      <div class="footer-col">
+        <div class="footer-brand">Titipaan ☀️</div>
+        <div class="footer-tagline">
+          Titip makanan jadi lebih gampang, cepat & sat set 🚀
+        </div>
+      </div>
+
+      <!-- INFO -->
+      <div class="footer-col">
+        <div class="footer-title">Info</div>
+        <div class="footer-link">Order sampai 10.45 WIB</div>
+        <div class="footer-link">Onsite delivery area terbatas</div>
+        <div class="footer-link">Fast response poll ⚡</div>
+      </div>
+
+      <!-- CONTACT / CTA -->
+      <div class="footer-col">
+        <div class="footer-title">Butuh bantuan ?</div>
+        <a href="https://wa.me/6285171691687" target="_blank" class="footer-cta">
+          Chat WhatsApp
+        </a>
+        <div class="footer-small">Klik untuk hubungi Aan 😊</div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM -->
+    <div class="footer-bottom">
+      © 2026 Titipaan • Made with ❤️ by Aan
+    </div>
+  </footer>
 </body>
 
 </html>

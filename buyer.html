@@ -746,17 +746,17 @@
         icon: "🍗",
         desc: "Makanan",
         menu: [
-          { id: "a1", nama: "Nasi Ayam", harga: 22000, ket: "Bakar / Goreng" },
-          { id: "a2", nama: "Nasi Ikan Nila", harga: 22000, ket: "Bakar / Goreng" },
-          { id: "a3", nama: "Nasi Lele", harga: 15000, ket: "Bakar / Goreng" },
-          { id: "a4", nama: "Nasi Ikan Kembung", harga: 22000, ket: "Bakar / Goreng" },
+          { id: "b1", nama: "Nasi Ayam", harga: 22000, ket: "Bakar / Goreng" },
+          { id: "b2", nama: "Nasi Ikan Nila", harga: 22000, ket: "Bakar / Goreng" },
+          { id: "b3", nama: "Nasi Lele", harga: 15000, ket: "Bakar / Goreng" },
+          { id: "b4", nama: "Nasi Ikan Kembung", harga: 22000, ket: "Bakar / Goreng" },
 
-          { id: "a5", nama: "Ayam (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
-          { id: "a6", nama: "Ikan Nila (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
-          { id: "a7", nama: "Lele (Tanpa Nasi)", harga: 10000, ket: "Bakar / Goreng" },
+          { id: "b5", nama: "Ayam (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
+          { id: "b6", nama: "Ikan Nila (Tanpa Nasi)", harga: 17000, ket: "Bakar / Goreng" },
+          { id: "b7", nama: "Lele (Tanpa Nasi)", harga: 10000, ket: "Bakar / Goreng" },
 
-          { id: "a8", nama: "Tahu / Tempe", harga: 3000, ket: "Goreng" },
-          { id: "a9", nama: "Sate Usus / Kulit / Ati Ampela", harga: 5000, ket: "Tambahan" },
+          { id: "b8", nama: "Tahu / Tempe", harga: 3000, ket: "Goreng" },
+          { id: "b9", nama: "Sate Usus / Kulit / Ati Ampela", harga: 5000, ket: "Tambahan" },
         ]
       },
       {
@@ -765,10 +765,10 @@
         icon: "🍗",
         desc: "Makanan",
         menu: [
-          { id: "a1", nama: "Nasi Ayam", harga: 22000, ket: "Goreng" },
-          { id: "a2", nama: "Ayam (Tanpa Nasi)", harga: 17000, ket: "Goreng" },
-          { id: "a3", nama: "Tahu / Tempe", harga: 3000, ket: "Goreng" },
-          { id: "a4", nama: "Sate Usus / Kulit / Ati Ampela", harga: 5000, ket: "Tambahan" },
+          { id: "c1", nama: "Nasi Ayam", harga: 22000, ket: "Goreng" },
+          { id: "c2", nama: "Ayam (Tanpa Nasi)", harga: 17000, ket: "Goreng" },
+          { id: "c3", nama: "Tahu / Tempe", harga: 3000, ket: "Goreng" },
+          { id: "c4", nama: "Sate Usus / Kulit / Ati Ampela", harga: 5000, ket: "Tambahan" },
         ]
       },
       {
@@ -904,6 +904,7 @@
             <input 
               type="text" 
               placeholder="Catatan (opsional)"
+              oninput="this.value = this.value.toUpperCase()"
               id="note-${m.id}"
               style="margin-top:6px;width:100%;padding:6px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;"
             />
@@ -1070,7 +1071,7 @@
           // contoh key: a1_pedas-manis
           const parts = key.split("_");
           const baseId = parts[0];
-          const note = parts.slice(1).join(" ").replace(/-/g, " ");
+          const note = parts.slice(1).join(" ").replace(/-/g, " ").toUpperCase();
 
           // cari menu dari TOKO
           let foundMenu = null;
@@ -1107,7 +1108,7 @@
 
           const parts = id.replace("takimo_", "").split("_");
 
-          const note = parts.pop().replace(/-/g, " ");
+          const note = parts.pop().replace(/-/g, " ").toUpperCase();
           const size = parseInt(parts.pop());
           const isi = parts;
 
@@ -1219,12 +1220,10 @@
     ========================= */
     window.submitOrder = async function () {
       const nama = document.getElementById("nama").value.trim();
-      const meja = document.getElementById("meja").value.trim();
       const telp = document.getElementById("telp").value.trim();
-      const catatan = document.getElementById("catatan").value.trim();
       const items = getItems();
 
-      debug("FORM", { nama, meja, telp, catatan });
+      debug("FORM", { nama, telp });
       debug("ITEMS", items);
 
       if (!isOpen) {
@@ -1249,9 +1248,7 @@
 
         const payload = {
           nama,
-          meja,
           telp,
-          catatan,
           items,
           buktiURL: imageUrl,
           grandTotal: total,
@@ -1274,12 +1271,11 @@
             message: `Pesanan Baru 🚀
 
             Nama: ${nama}
-            Meja: ${meja || "-"}
             Total: Rp${fmt(total)}
 
             ${items.map(i => `- ${i.nama} x${i.qty}`).join("\n")}
 
-            Catatan: ${catatan || "-"}`
+            `
           })
         });
 

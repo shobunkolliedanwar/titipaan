@@ -727,6 +727,39 @@
       }
     });
 
+    const TOKO = [
+      {
+        id: "toko_a",
+        nama: "Ayam Bakar Viar Merah",
+        icon: "🍗",
+      },
+      {
+        id: "toko_b",
+        nama: "Ayam Bakar Viar Biru",
+        icon: "🍗",
+      },
+      {
+        id: "toko_c",
+        nama: "Ayam Cabai Hijau (Samping Trembesi)",
+        icon: "🍗",
+      },
+      {
+        id: "toko_d",
+        nama: "TAKIMO",
+        icon: "🍢",
+      },
+      {
+        id: "toko_e",
+        nama: "Gado - Gado",
+        icon: "🥗",
+      },
+      {
+        id: "toko_f",
+        nama: "Ketoprak",
+        icon: "🍲",
+      }
+    ];
+
     /* =========================
        STATE
     ========================= */
@@ -780,16 +813,11 @@
             result[toko].items[item.nama] = {
               qty: 0,
               total: 0,
-              catatan: []
             };
           }
 
           result[toko].items[item.nama].qty += item.qty;
           result[toko].items[item.nama].total += item.sub;
-
-          if (order.catatan) {
-            result[toko].items[item.nama].catatan.push(order.catatan);
-          }
 
           result[toko].total += item.sub;
         });
@@ -874,9 +902,12 @@
       const doc = new jsPDF();
 
       const TOKO = [
-        { id: "toko_a", nama: "Ayam Bakar Viar Merah" },
-        { id: "toko_b", nama: "Ketoprak & Gado-gado Pak Hendra" },
-        { id: "toko_c", nama: "Nasi & Mie Bu Dewi" },
+        "Ayam Bakar Viar Merah",
+        "Ayam Bakar Viar Biru",
+        "Ayam Cabai Hijau (Samping Trembesi)",
+        "TAKIMO",
+        "Gado - Gado",
+        "Ketoprak"
       ];
 
       const data = {};
@@ -930,7 +961,7 @@
 
         doc.autoTable({
           startY: y,
-          head: [["Menu", "Catatan", "Qty", "Subtotal"]],
+          head: [["Menu", "Qty", "Subtotal"]],
           body: rows,
           theme: "grid",
         });
@@ -968,7 +999,6 @@
         html += `<table>
       <tr>
         <th>Menu</th>
-        <th>Catatan</th>
         <th>Qty</th>
         <th>Total</th>
       </tr>`;
@@ -977,7 +1007,6 @@
           html += `
         <tr>
           <td>${nama}</td>
-          <td>${(v.catatan || []).join(", ")}</td>
           <td>${v.qty}</td>
           <td>Rp${v.total.toLocaleString("id-ID")}</td>
         </tr>
@@ -1025,7 +1054,7 @@
       if (!tog || !lbl) return;
 
       tog.className = "toggle" + (isOpen ? " on" : "");
-      lbl.textContent = isOpen ? "Open" : "Tutup";
+      lbl.textContent = isOpen ? "Buka" : "Tutup";
     }
 
     /* =========================
@@ -1195,7 +1224,6 @@
           ${items.map(i => `
             <div class="order-item-row">
               <span>${i.nama} x ${i.qty}</span>
-              <span>Catatan : ${o.catatan}</span>
               <span>Rp${fmt(i.sub)}</span>
             </div>
           `).join("")}
@@ -1243,15 +1271,9 @@
       const container = document.getElementById("toko-rekap-container");
       if (!container) return;
 
-      const TOKO = [
-        { id: "toko_a", nama: "Ayam Bakar Viar Merah", icon: "🍗" },
-        { id: "toko_b", nama: "Ketoprak & Gado-gado Pak Hendra", icon: "🥗" },
-        { id: "toko_c", nama: "Nasi & Mie Bu Dewi", icon: "🍜" },
-      ];
-
       const tokoData = {};
 
-      // init
+      // init semua toko
       TOKO.forEach(t => {
         tokoData[t.id] = {
           ...t,
@@ -1260,12 +1282,12 @@
         };
       });
 
-      // aggregate
+      // aggregate data
       getFilteredOrders()
         .filter(o => o.status !== "batal")
         .forEach(order => {
           (order.items || []).forEach(item => {
-            const tokoNama = item.toko; // dari Firestore (STRING)
+            const tokoNama = item.toko;
 
             const toko = TOKO.find(t => t.nama === tokoNama);
 
@@ -1392,7 +1414,7 @@
       <div class="header-logo">Admin — Titipaan</div>
       <div class="header-right">
         <div class="toggle-wrap">
-          <span id="toggle-label" class="toggle-label" style="color:var(--green)">Open</span>
+          <span id="toggle-label" class="toggle-label" style="color:var(--green)">Buka</span>
           <button class="toggle on" id="toggle-btn" onclick="toggleStatus()"></button>
         </div>
         <button class="btn-print" onclick="cetakPDF()">

@@ -903,133 +903,121 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      const TOKO = [
-        "Ayam Bakar Viar Merah",
-        "Ayam Bakar Viar Biru",
-        "Ayam Cabai Hijau (Samping Trembesi)",
-        "TAKIMO",
-        "Gado - Gado",
-        "Ketoprak"
-      ];
+      const filtered = getFilteredOrders();
+      const data = groupPerTokoPerOrang(filtered);
 
-      const data = {};
+      const labelTanggal = dateFilter.from || dateFilter.to
+        ? `Filter: ${dateFilter.from?.toLocaleDateString("id-ID") || "..."} - ${dateFilter.to?.toLocaleDateString("id-ID") || "..."}`
+        : "Semua tanggal";
 
-      // init
-      TOKO.forEach(t => {
-        data[t.nama] = {
-          items: {},
-          total: 0
-        };
-      });
-
-      // grouping data
-      allOrders.forEach(order => {
-        (order.items || []).forEach(item => {
-
-          const tokoNama = item.toko;
-          if (!data[tokoNama]) return;
-
-          if (!data[tokoNama].items[item.nama]) {
-            data[tokoNama].items[item.nama] = {
-              qty: 0,
-              total: 0
-            };
-          }
-
-          data[tokoNama].items[item.nama].qty += item.qty;
-          data[tokoNama].items[item.nama].total += item.sub;
-
-          data[tokoNama].total += item.sub;
-        });
-      });
+      doc.setFontSize(10);
+      doc.text(labelTanggal, 10, y);
+      y += 6;
 
       let y = 10;
 
       doc.setFontSize(16);
-      doc.text("REKAP JASTIP PER WARUNG", 10, y);
+      doc.text("DAFTAR PESANAN PER WARUNG", 10, y);
       y += 10;
 
-      Object.entries(data)
-        .sort((a, b) => a[0].localeCompare(b[0], "id"))
-        .forEach(([toko, val]) => {
+      Object.keys(data)
+        .sort((a, b) => a.localeCompare(b, "id"))
+        .forEach(toko => {
 
-          doc.setFontSize(12);
-          doc.text(`${toko} - Total Rp${val.total.toLocaleString("id-ID")}`, 10, y);
-          y += 6;
+          doc.setFontSize(14);
+          doc.text(toko, 10, y);
+          y += 4;
 
-          const rows = Object.entries(val.items)
-            .sort((a, b) => a[0].localeCompare(b[0], "id"))
-            .map(([nama, v]) => [
-              nama,
-              v.qty,
-              v.total.toLocaleString("id-ID")
-            ]);
+          const rows = data[toko].map((order, i) => {
+            const itemsText = order.items
+              .map(it => `${it.nama} x${it.qty}`)
+              .join(", ");
+
+            return [
+              i + 1,
+              order.nama,
+              itemsText,
+              "Rp" + order.total.toLocaleString("id-ID")
+            ];
+          });
 
           doc.autoTable({
             startY: y,
-            head: [["Menu", "Qty", "Subtotal"]],
+            head: [["No", "Nama", "Pesanan", "Total"]],
             body: rows,
             theme: "grid",
+            styles: { fontSize: 9 }
           });
 
           y = doc.lastAutoTable.finalY + 10;
         });
 
-      doc.save("rekap-titipaan.pdf");
+      doc.save("per-warung-tabel.pdf");
     };
 
     window.cetakPDF = function () {
-      const data = groupByToko(allOrders);
+
+      const filtered = getFilteredOrders();
+      const data = groupPerTokoPerOrang(filtered);
+
+      const labelTanggal = dateFilter.from || dateFilter.to
+        ? `Filter: ${dateFilter.from?.toLocaleDateString("id-ID") || "..."} - ${dateFilter.to?.toLocaleDateString("id-ID") || "..."}`
+        : "Semua tanggal";
 
       let html = `
-    <html>
-    <head>
-      <title>Rekap Jastip</title>
-      <style>
-        body { font-family: Arial; padding: 20px; }
-        h2 { margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
-        th { background: #f3f3f3; }
-        .total { font-weight: bold; margin-top: 10px; }
-      </style>
-    </head>
-    <body>
-      <h1>Rekap Penjualan per Warung</h1>
-  `;
+        <html>
+        <head>
+          <title>Pesanan</title>
+          <style>
+            body { font-family: Arial; padding: 20px; }
+            h2 { margin-top: 25px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 6px; font-size: 12px; }
+            th { background: #f3f3f3; }
+          </style>
+        </head>
+        <body>
+          <h1>Pesanan Per Warung</h1>
+        `;
 
-      Object.keys(data).forEach(toko => {
-        const t = data[toko];
+      Object.keys(data)
+        .sort((a, b) => a.localeCompare(b, "id"))
+        .forEach(toko => {
 
-        html += `<h2>${toko}</h2>`;
-        html += `<table>
-      <tr>
-        <th>Menu</th>
-        <th>Qty</th>
-        <th>Total</th>
-      </tr>`;
+          html += `<h2>${toko}</h2>`;
 
-        Object.entries(t.items)
-          .sort((a, b) => a[0].localeCompare(b[0], "id"))
-          .forEach(([nama, v]) => {
-            html += `
-        <tr>
-          <td>${nama}</td>
-          <td>${v.qty}</td>
-          <td>Rp${v.total.toLocaleString("id-ID")}</td>
-        </tr>
+          html += `
+        <table>
+          <tr>
+            <th>No</th>
+            <th>Nama</th>
+            <th>Pesanan</th>
+            <th>Total</th>
+          </tr>
       `;
+
+          data[toko].forEach((order, i) => {
+
+            const itemsText = order.items
+              .map(it => `${it.nama} x${it.qty}`)
+              .join(", ");
+
+            html += `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${order.nama}</td>
+            <td>${itemsText}</td>
+            <td>Rp${order.total.toLocaleString("id-ID")}</td>
+          </tr>
+        `;
           });
 
-        html += `
-      </table>
-      <div class="total">Subtotal: Rp${t.total.toLocaleString("id-ID")}</div>
-    `;
-      });
+          html += `</table>`;
+        });
 
       html += `
-    </body>
-    </html>
+  </body>
+  </html>
   `;
 
       const win = window.open("", "_blank");
@@ -1099,6 +1087,38 @@
         document.getElementById("orders-loading").innerHTML =
           `<div class="empty-state">Firestore error / index missing</div>`;
       });
+    }
+
+    function groupPerTokoPerOrang(orders) {
+      const result = {};
+
+      orders.forEach(order => {
+        (order.items || []).forEach(item => {
+          const toko = item.toko || "Unknown";
+
+          if (!result[toko]) {
+            result[toko] = [];
+          }
+
+          // cari apakah orang ini sudah ada di toko ini
+          let existing = result[toko].find(o => o.id === order.id);
+
+          if (!existing) {
+            existing = {
+              id: order.id,
+              nama: order.nama,
+              items: [],
+              total: 0
+            };
+            result[toko].push(existing);
+          }
+
+          existing.items.push(item);
+          existing.total += item.sub;
+        });
+      });
+
+      return result;
     }
 
     /* =========================

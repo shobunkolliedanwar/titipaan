@@ -949,27 +949,31 @@
       doc.text("REKAP JASTIP PER WARUNG", 10, y);
       y += 10;
 
-      Object.entries(data).forEach(([toko, val]) => {
+      Object.entries(data)
+        .sort((a, b) => a[0].localeCompare(b[0], "id"))
+        .forEach(([toko, val]) => {
 
-        doc.setFontSize(12);
-        doc.text(`${toko} - Total Rp${val.total.toLocaleString("id-ID")}`, 10, y);
-        y += 6;
+          doc.setFontSize(12);
+          doc.text(`${toko} - Total Rp${val.total.toLocaleString("id-ID")}`, 10, y);
+          y += 6;
 
-        const rows = Object.entries(val.items).map(([nama, v]) => [
-          nama,
-          v.qty,
-          v.total.toLocaleString("id-ID")
-        ]);
+          const rows = Object.entries(val.items)
+            .sort((a, b) => a[0].localeCompare(b[0], "id"))
+            .map(([nama, v]) => [
+              nama,
+              v.qty,
+              v.total.toLocaleString("id-ID")
+            ]);
 
-        doc.autoTable({
-          startY: y,
-          head: [["Menu", "Qty", "Subtotal"]],
-          body: rows,
-          theme: "grid",
+          doc.autoTable({
+            startY: y,
+            head: [["Menu", "Qty", "Subtotal"]],
+            body: rows,
+            theme: "grid",
+          });
+
+          y = doc.lastAutoTable.finalY + 10;
         });
-
-        y = doc.lastAutoTable.finalY + 10;
-      });
 
       doc.save("rekap-titipaan.pdf");
     };
@@ -1005,15 +1009,17 @@
         <th>Total</th>
       </tr>`;
 
-        Object.entries(t.items).forEach(([nama, v]) => {
-          html += `
+        Object.entries(t.items)
+          .sort((a, b) => a[0].localeCompare(b[0], "id"))
+          .forEach(([nama, v]) => {
+            html += `
         <tr>
           <td>${nama}</td>
           <td>${v.qty}</td>
           <td>Rp${v.total.toLocaleString("id-ID")}</td>
         </tr>
       `;
-        });
+          });
 
         html += `
       </table>

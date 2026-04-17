@@ -421,7 +421,7 @@
   </div>
 
   <header class="header">
-    <div class="header-logo">TITIPAAN</div>
+    <div class="header-logo">Titipaan</div>
     <div id="header-badge" class="badge-status badge-closed">Mengecek...</div>
   </header>
 
@@ -466,6 +466,7 @@
     <div id="page-payment" style="display: none;">
       <div class="section">
         <div class="payment-box">
+          <!-- <div id="rekap-box-payment" class="rekap-box" style="margin-bottom:15px;"></div> -->
           <div class="section-title">Pembayaran QRIS</div>
           <img src="https://i.ibb.co.com/x8sZwz4Z/QRIS.png" class="qris-img"
             onclick="document.getElementById('qris-modal').style.display='flex'">
@@ -539,6 +540,7 @@
     let uploadedFile = null;
     let currentGrandTotal = 0;
     let currentTab = "siang";
+    let currentPage = 'order';
     const ONGKIR = 2000;
     const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpu7jpybe/image/upload";
     const UPLOAD_PRESET = "titipaan";
@@ -613,9 +615,16 @@
     };
 
     window.showPage = (page) => {
+      currentPage = page;
+
       document.getElementById("page-order").style.display = page === 'order' ? 'block' : 'none';
       document.getElementById("page-payment").style.display = page === 'payment' ? 'block' : 'none';
       document.getElementById("page-success").style.display = page === 'success' ? 'block' : 'none';
+      document.querySelector(".tab-wrapper").style.display =
+        page === "payment" ? "none" : "flex";
+
+      renderRekap();
+
       window.scrollTo(0, 0);
     };
 
@@ -756,56 +765,73 @@
 
     function renderRekap() {
       const items = getItems();
-      const box = document.getElementById("rekap-box");
 
-      if (items.length === 0) {
-        box.innerHTML = "Pilih menu di atas...";
+      const boxOrder = document.getElementById("rekap-box");
+      const boxPayment = document.getElementById("rekap-box-payment");
+
+      if (!items.length) {
+        if (boxOrder) boxOrder.innerHTML = "Pilih menu di atas...";
+        if (boxPayment) boxPayment.innerHTML = "-";
+
         document.getElementById("total-display").textContent = "Rp0";
+        document.getElementById("payment-total-val").textContent = "Rp0";
+
         currentGrandTotal = 0;
         return;
       }
 
       let total = 0;
 
-      const group = {
-        siang: [],
-        sore: []
-      };
-
       items.forEach(i => {
-        group[i.tab].push(i);
         total += i.sub + (ONGKIR * i.qty);
       });
 
-      box.innerHTML = `
-    ${group.siang.length ? `
-      <div style="margin-bottom:10px">
-        <strong>🍱 Jastip Makan Siang</strong>
-        ${group.siang.map(i => `
-          <div>
-            ${i.nama} x${i.qty}<br>
-            <span style="color:var(--muted)">
-              Rp ${i.sub.toLocaleString()}
-            </span>
-          </div>
-        `).join("<hr style='opacity:0.1'>")}
-      </div>
-    ` : ""}
+      // =========================
+      // 🔥 ORDER PAGE (PAKAI HEADER)
+      // =========================
+      if (boxOrder) {
+        const group = { siang: [], sore: [] };
 
-    ${group.sore.length ? `
-      <div style="margin-bottom:10px">
-        <strong>🍩 Jajan Sore</strong>
-        ${group.sore.map(i => `
-          <div>
-            ${i.nama} x${i.qty}<br>
-            <span style="color:var(--muted)">
-              Rp ${i.sub.toLocaleString()}
-            </span>
-          </div>
-        `).join("<hr style='opacity:0.1'>")}
-      </div>
-    ` : ""}
-  `;
+        items.forEach(i => group[i.tab].push(i));
+
+        boxOrder.innerHTML = `
+      ${group.siang.length ? `
+        <div style="margin-bottom:10px">
+          <strong>🍱 Jastip Makan Siang</strong>
+          ${group.siang.map(i => `
+            <div>
+              ${i.nama} x${i.qty}<br>
+              <span style="color:var(--muted)">
+                Rp ${i.sub.toLocaleString()}
+              </span>
+            </div>
+          `).join("<hr style='opacity:0.1'>")}
+        </div>
+      ` : ""}
+
+      ${group.sore.length ? `
+        <div style="margin-bottom:10px">
+          <strong>🍩 Jajan Sore</strong>
+          ${group.sore.map(i => `
+            <div>
+              ${i.nama} x${i.qty}<br>
+              <span style="color:var(--muted)">
+                Rp ${i.sub.toLocaleString()}
+              </span>
+            </div>
+          `).join("<hr style='opacity:0.1'>")}
+        </div>
+      ` : ""}
+    `;
+      }
+
+      // =========================
+      // 🔥 PAYMENT PAGE (NO HEADER)
+      // =========================
+      if (boxPayment) {
+        // 🔥 Kosongkan, tidak tampilkan item apapun
+        boxPayment.innerHTML = "";
+      }
 
       currentGrandTotal = total;
 
@@ -820,6 +846,8 @@
       if (!document.getElementById("nama").value.trim()) return showToast("Isi Nama Kamu");
       if (getItems().length === 0) return showToast("Pilih menu dulu");
       showPage('payment');
+
+      renderRekap();
     };
 
     document.getElementById("bukti-input").addEventListener("change", (e) => {

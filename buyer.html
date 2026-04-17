@@ -297,6 +297,31 @@
       display: none;
     }
 
+    .tab-wrapper {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: var(--bg);
+      position: sticky;
+      top: 56px;
+      z-index: 90;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .tab.active {
+      background: var(--text);
+      color: white;
+    }
+
     /* FOOTER PREMIUM */
     .footer-premium {
       background: var(--text);
@@ -400,6 +425,11 @@
     <div id="header-badge" class="badge-status badge-closed">Mengecek...</div>
   </header>
 
+  <div class="tab-wrapper">
+    <button class="tab active" onclick="switchTab('siang')">🍱 Jastip Makan Siang</button>
+    <button class="tab" onclick="switchTab('sore')">🍩 Jastip Jajan Sore</button>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <main class="main">
@@ -501,15 +531,19 @@
     const db = getFirestore(app);
 
     let isOpen = true;
-    let qty = {};
+    let qty = {
+      siang: {},
+      sore: {}
+    };
     let takimo = { items: [], size: 5000, note: "" };
     let uploadedFile = null;
     let currentGrandTotal = 0;
+    let currentTab = "siang";
     const ONGKIR = 2000;
     const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpu7jpybe/image/upload";
     const UPLOAD_PRESET = "titipaan";
 
-    const TOKO = [
+    const TOKO_SIANG = [
       {
         id: "toko_a", nama: "Ayam Bakar Viar Merah", icon: "🍗", menu: [
           { id: "a1", nama: "Nasi Ayam (Bakar/Goreng)", harga: 22000 },
@@ -559,6 +593,19 @@
       }
     ];
 
+    const TOKO_SORE = [
+      {
+        id: "toko_s1",
+        nama: "Jajanan Sore",
+        icon: "🍩",
+        menu: [
+          { id: "s1", nama: "Donat", harga: 8000 },
+          { id: "s2", nama: "Cilok", harga: 5000 },
+          { id: "s3", nama: "Es Teh", harga: 4000 }
+        ]
+      }
+    ];
+
     window.showToast = (msg) => {
       const t = document.getElementById("toast");
       t.textContent = msg; t.style.display = "block";
@@ -572,16 +619,43 @@
       window.scrollTo(0, 0);
     };
 
+    window.switchTab = (tab) => {
+      currentTab = tab;
+
+      // qty = {};
+      renderRekap();
+
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add("active");
+
+      renderToko();
+    };
+
     window.changeQty = (id, delta) => {
       const noteInput = document.getElementById("note-" + id);
       const note = noteInput ? noteInput.value.trim() : "";
-      if (delta > 0 && !note) { showToast("Isi catatan dulu ya"); noteInput.focus(); return; }
+
+      if (delta > 0 && !note) {
+        showToast("Isi catatan dulu ya");
+        noteInput.focus();
+        return;
+      }
+
       const noteSafe = note ? note.replace(/\s/g, "-") : "normal";
       const cartKey = `${id}_${noteSafe}`;
-      qty[cartKey] = Math.max(0, (qty[cartKey] || 0) + delta);
-      const totalDisplay = Object.keys(qty).filter(k => k.startsWith(id + "_")).reduce((sum, k) => sum + qty[k], 0);
+
+      const cart = qty[currentTab];
+
+      cart[cartKey] = Math.max(0, (cart[cartKey] || 0) + delta);
+
+      const totalDisplay = Object.keys(cart)
+        .filter(k => k.startsWith(id + "_"))
+        .reduce((sum, k) => sum + cart[k], 0);
+
       document.getElementById("qty-" + id).textContent = totalDisplay;
+
       if (delta > 0 && noteInput) noteInput.value = "";
+
       renderRekap();
     };
 
@@ -593,77 +667,153 @@
     window.addTakimo = () => {
       const noteInput = document.getElementById("takimo-note");
       const note = noteInput.value.trim();
-      if (takimo.items.length === 0) return showToast("Pilih isi TAKIMO");
+
+      if (takimo.items.length === 0) {
+        return showToast("Pilih isi TAKIMO");
+      }
+
       const noteSafe = note ? note.replace(/\s/g, "-") : "normal";
       const size = parseInt(document.getElementById("takimo-size").value);
+
       const id = `takimo_${takimo.items.join("-")}_${size}_${noteSafe}`;
-      qty[id] = (qty[id] || 0) + 1;
-      takimo.items = []; noteInput.value = "";
+
+      const cart = qty[currentTab];
+
+      cart[id] = (cart[id] || 0) + 1;
+
+      takimo.items = [];
+      noteInput.value = "";
+
       document.querySelectorAll('.takimo-check').forEach(c => c.checked = false);
+
       renderRekap();
       showToast("TAKIMO ditambahkan");
     };
 
     function getItems() {
       const items = [];
-      Object.keys(qty).forEach(key => {
-        if (qty[key] <= 0) return;
 
-        if (key.startsWith("takimo_")) {
-          const p = key.split("_");
-          const size = parseInt(p[2]);
-          items.push({
-            nama: `TAKIMO (${p[1]}) - ${p[3].replace(/-/g, " ")}`,
-            harga: size,
-            qty: qty[key],
-            sub: size * qty[key],
-            toko: "TAKIMO" // <-- Tambahkan ini
-          });
-        } else {
-          const [id, note] = key.split("_");
-          let menuData;
-          let namaToko = "";
+      const ALL_CART = {
+        siang: qty.siang,
+        sore: qty.sore
+      };
 
-          TOKO.forEach(t => {
-            t.menu.forEach(m => {
-              if (m.id === id) {
-                menuData = m;
-                namaToko = t.nama;
-              }
-            });
-          });
+      const TOKO_MAP = {
+        siang: TOKO_SIANG,
+        sore: TOKO_SORE
+      };
 
-          if (menuData) {
+      Object.keys(ALL_CART).forEach(tab => {
+        const cart = ALL_CART[tab];
+        const TOKO = TOKO_MAP[tab];
+
+        Object.keys(cart).forEach(key => {
+          if (cart[key] <= 0) return;
+
+          if (key.startsWith("takimo_")) {
+            const p = key.split("_");
+            const size = parseInt(p[2]);
+
             items.push({
-              nama: `${menuData.nama} (${note.replace(/-/g, " ")})`,
-              harga: menuData.harga,
-              qty: qty[key],
-              sub: menuData.harga * qty[key],
-              toko: namaToko
+              tab,
+              toko: "TAKIMO",
+              nama: `TAKIMO (${p[1]}) - ${p[3].replace(/-/g, " ")}`,
+              harga: size,
+              qty: cart[key],
+              sub: size * cart[key]
             });
+
+          } else {
+            const [id, note] = key.split("_");
+            let menuData;
+            let namaToko = "";
+
+            TOKO.forEach(t => {
+              t.menu.forEach(m => {
+                if (m.id === id) {
+                  menuData = m;
+                  namaToko = t.nama;
+                }
+              });
+            });
+
+            if (menuData) {
+              items.push({
+                tab,
+                toko: namaToko,
+                nama: `${menuData.nama} (${note.replace(/-/g, " ")})`,
+                harga: menuData.harga,
+                qty: cart[key],
+                sub: menuData.harga * cart[key]
+              });
+            }
           }
-        }
+        });
       });
+
       return items;
     }
 
     function renderRekap() {
       const items = getItems();
       const box = document.getElementById("rekap-box");
-      let total = 0;
+
       if (items.length === 0) {
         box.innerHTML = "Pilih menu di atas...";
         document.getElementById("total-display").textContent = "Rp0";
-        currentGrandTotal = 0; return;
+        currentGrandTotal = 0;
+        return;
       }
-      box.innerHTML = items.map(i => {
-        const itemTotal = i.sub + (ONGKIR * i.qty);
-        total += itemTotal;
-        return `<div><strong>${i.nama}</strong> x${i.qty}<br><span style="color:var(--muted)">Rp. ${i.sub.toLocaleString()} + Ongkir Rp. ${(ONGKIR * i.qty).toLocaleString()}</span></div>`;
-      }).join("<hr style='margin:8px 0; opacity:0.1'>");
+
+      let total = 0;
+
+      const group = {
+        siang: [],
+        sore: []
+      };
+
+      items.forEach(i => {
+        group[i.tab].push(i);
+        total += i.sub + (ONGKIR * i.qty);
+      });
+
+      box.innerHTML = `
+    ${group.siang.length ? `
+      <div style="margin-bottom:10px">
+        <strong>🍱 Jastip Makan Siang</strong>
+        ${group.siang.map(i => `
+          <div>
+            ${i.nama} x${i.qty}<br>
+            <span style="color:var(--muted)">
+              Rp ${i.sub.toLocaleString()}
+            </span>
+          </div>
+        `).join("<hr style='opacity:0.1'>")}
+      </div>
+    ` : ""}
+
+    ${group.sore.length ? `
+      <div style="margin-bottom:10px">
+        <strong>🍩 Jajan Sore</strong>
+        ${group.sore.map(i => `
+          <div>
+            ${i.nama} x${i.qty}<br>
+            <span style="color:var(--muted)">
+              Rp ${i.sub.toLocaleString()}
+            </span>
+          </div>
+        `).join("<hr style='opacity:0.1'>")}
+      </div>
+    ` : ""}
+  `;
+
       currentGrandTotal = total;
-      document.getElementById("total-display").textContent = "Rp" + total.toLocaleString("id-ID");
-      document.getElementById("payment-total-val").textContent = "Rp" + total.toLocaleString("id-ID");
+
+      document.getElementById("total-display").textContent =
+        "Rp" + total.toLocaleString("id-ID");
+
+      document.getElementById("payment-total-val").textContent =
+        "Rp" + total.toLocaleString("id-ID");
     }
 
     window.goToPayment = () => {
@@ -720,13 +870,41 @@
       }
     });
 
-    const container = document.getElementById("toko-container");
-    container.innerHTML = TOKO.map(t => {
-      if (t.id === 'toko_d') {
-        return `<div class="store-block"><div class="store-header"><span>${t.icon}</span> <strong>${t.nama}</strong></div><div style="padding:15px"><label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Tahu')"> Tahu</label> &nbsp;<label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Kentang')"> Kentang</label> &nbsp;<label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Cimol')"> Cimol</label><select id="takimo-size" style="width:100%; margin:10px 0; padding:8px; border-radius:5px; border:1px solid var(--border)"><option value="5000">Harga Rp. 5.000</option><option value="10000">Harga Rp. 10.000</option></select><input type="text" id="takimo-note" placeholder="Catatan Rasa (Pedas/Ori)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:5px;"><button class="btn-primary" onclick="addTakimo()" style="margin-top:10px; padding:10px; font-size:13px">+ Tambah TAKIMO</button></div></div>`;
-      }
-      return `<div class="store-block"><div class="store-header"><span>${t.icon}</span> <strong>${t.nama}</strong></div>${t.menu.map(m => `<div class="menu-item"><div class="menu-info"><div class="menu-name">${m.nama}</div><div class="menu-harga">Rp. ${m.harga.toLocaleString()}</div><input type="text" id="note-${m.id}" placeholder="Catatan" style="width:100%; font-size:11px; margin-top:5px; padding:6px; border:1px solid #eee; border-radius:4px;"></div><div class="qty-wrap"><button class="qty-btn" onclick="changeQty('${m.id}', -1)">-</button><span id="qty-${m.id}" style="font-weight:600; min-width:15px; text-align:center">0</span><button class="qty-btn" onclick="changeQty('${m.id}', 1)">+</button></div></div>`).join("")}</div>`;
-    }).join("");
+    function renderToko() {
+      const container = document.getElementById("toko-container");
+
+      const TOKO = currentTab === "siang" ? TOKO_SIANG : TOKO_SORE;
+
+      container.innerHTML = TOKO.map(t => {
+        if (t.id === 'toko_d') {
+          return `...` // TAKIMO tetap
+        }
+
+        return `
+    <div class="store-block">
+      <div class="store-header">
+        <span>${t.icon}</span> <strong>${t.nama}</strong>
+      </div>
+      ${t.menu.map(m => `
+        <div class="menu-item">
+          <div class="menu-info">
+            <div class="menu-name">${m.nama}</div>
+            <div class="menu-harga">Rp. ${m.harga.toLocaleString()}</div>
+            <input type="text" id="note-${m.id}" placeholder="Catatan"
+              style="width:100%; font-size:11px; margin-top:5px; padding:6px; border:1px solid #eee; border-radius:4px;">
+          </div>
+          <div class="qty-wrap">
+            <button class="qty-btn" onclick="changeQty('${m.id}', -1)">-</button>
+            <span id="qty-${m.id}">0</span>
+            <button class="qty-btn" onclick="changeQty('${m.id}', 1)">+</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>`;
+      }).join("");
+    }
+
+    renderToko();
   </script>
 </body>
 

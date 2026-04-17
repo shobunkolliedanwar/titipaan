@@ -519,14 +519,29 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, addDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+    // dev
+    // const firebaseConfig = {
+    //   apiKey: "AIzaSyC3SaFd1Ub1HhqxOSul0nHR3syglsu_QB0",
+    //   authDomain: "titipaan-dev.firebaseapp.com",
+    //   projectId: "titipaan-dev",
+    //   storageBucket: "titipaan-dev.firebasestorage.app",
+    //   messagingSenderId: "275870209116",
+    //   appId: "1:275870209116:web:628a18f7858a6da9ab4299",
+    //   measurementId: "G-7BPQ7MT7QR"
+    // };
+
+    // prod
     const firebaseConfig = {
       apiKey: "AIzaSyC73kar1erGtLmdfPASWkGnguqL1phyk6U",
       authDomain: "titipaan-2b629.firebaseapp.com",
       projectId: "titipaan-2b629",
       storageBucket: "titipaan-2b629.firebasestorage.app",
       messagingSenderId: "336246536262",
-      appId: "1:336246536262:web:a994ae324ce3b658593247"
+      appId: "1:336246536262:web:a994ae324ce3b658593247",
+      measurementId: "G-63Z2QZ86G8"
     };
+
+    console.log("🔥 FIREBASE PROJECT:", firebaseConfig.projectId);
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);

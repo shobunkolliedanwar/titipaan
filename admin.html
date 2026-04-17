@@ -790,6 +790,7 @@
 
       debug("INIT", true);
 
+      resetDateFilter();
       loadStatus();
       subscribeOrders();
 
@@ -1141,17 +1142,30 @@
     function getFilteredOrders() {
       let filtered = allOrders;
 
+      // 1. FILTER STATUS
       if (currentFilter !== "semua") {
-        filtered = filtered.filter(o => o.status === currentFilter);
+        filtered = filtered.filter(o => {
+          const statusDatabase = o.status || "menunggu";
+          return statusDatabase === currentFilter;
+        });
       }
 
+      // 2. FILTER TANGGAL
       filtered = filtered.filter(o => {
-        if (!o.createdAt?.toDate) return true;
+        // Jika tidak ada tanggal, tampilkan saja daripada hilang
+        if (!o.createdAt || !o.createdAt.toDate) return true;
 
         const tgl = o.createdAt.toDate();
 
-        if (dateFilter.from && tgl < dateFilter.from) return false;
-        if (dateFilter.to && tgl > dateFilter.to) return false;
+        // Pastikan dateFilter.from dan to adalah objek Date yang valid
+        if (dateFilter.from instanceof Date && tgl < dateFilter.from) return false;
+
+        // Untuk filter "Hingga", kita set ke akhir hari (23:59:59) agar data hari ini ikut masuk
+        if (dateFilter.to instanceof Date) {
+          const limitTo = new Date(dateFilter.to);
+          limitTo.setHours(23, 59, 59, 999);
+          if (tgl > limitTo) return false;
+        }
 
         return true;
       });
@@ -1160,20 +1174,22 @@
     }
 
     function renderStats() {
-      const data = getFilteredOrders();
+      // PAKAI allOrders supaya statistik menghitung SEMUA data di database
+      const data = allOrders;
 
       const total = data.length;
       const lunas = data.filter(o => o.status === "lunas").length;
       const menunggu = data.filter(o => o.status === "menunggu").length;
 
+      // Omzet biasanya hanya menghitung yang sudah Lunas
       const omzet = data
-        .filter(o => o.status !== "batal")
-        .reduce((a, o) => a + (o.grandTotal || 0), 0);
+        .filter(o => o.status === "lunas")
+        .reduce((a, o) => a + (o.totalBayar || o.grandTotal || 0), 0);
 
       document.getElementById("stat-total").textContent = total;
       document.getElementById("stat-lunas").textContent = lunas;
       document.getElementById("stat-menunggu").textContent = menunggu;
-      document.getElementById("stat-omzet").textContent = "Rp" + fmt(omzet);
+      document.getElementById("stat-omzet").textContent = "Rp" + (omzet.toLocaleString('id-ID'));
     }
 
     /* =========================
@@ -1188,7 +1204,10 @@
 
       // filter status
       if (currentFilter !== "semua") {
-        filtered = filtered.filter(o => o.status === currentFilter);
+        filtered = filtered.filter(o => {
+          const statusDatabase = o.status || "menunggu";
+          return statusDatabase === currentFilter;
+        });
       }
 
       // 🔥 filter tanggal
@@ -1252,7 +1271,7 @@
           ${items.map(i => `
             <div class="order-item-row">
               <span>${i.nama} x ${i.qty}</span>
-              <span>Rp${fmt(i.sub)}</span>
+              <span>Rp. ${fmt(i.sub)}</span>
             </div>
           `).join("")}
         </div>
@@ -1260,7 +1279,7 @@
 
       <div class="order-total-bar">
         <span>Total</span>
-        <span>Rp${fmt(o.grandTotal)}</span>
+        <span>Rp. ${fmt(o.totalBayar || o.grandTotal)}</span>
       </div>
 
     </div>

@@ -426,7 +426,7 @@
         <div id="rekap-box" class="rekap-box">Pilih menu di atas...</div>
         <div class="total-bar">
           <span>Total + Ongkir</span>
-          <span id="total-display">Rp0</span>
+          <span id="total-display">Rp. 0</span>
         </div>
       </div>
 
@@ -439,7 +439,7 @@
           <div class="section-title">Pembayaran QRIS</div>
           <img src="https://i.ibb.co.com/x8sZwz4Z/QRIS.png" class="qris-img"
             onclick="document.getElementById('qris-modal').style.display='flex'">
-          <div class="payment-total-display" id="payment-total-val">Rp0</div>
+          <div class="payment-total-display" id="payment-total-val">Rp. 0</div>
           <p style="font-size:12px; color:var(--muted); margin-bottom: 20px;">Silakan transfer sesuai nominal & upload
             bukti:</p>
 
@@ -608,15 +608,40 @@
       const items = [];
       Object.keys(qty).forEach(key => {
         if (qty[key] <= 0) return;
+
         if (key.startsWith("takimo_")) {
           const p = key.split("_");
           const size = parseInt(p[2]);
-          items.push({ nama: `TAKIMO (${p[1]}) - ${p[3].replace(/-/g, " ")}`, harga: size, qty: qty[key], sub: size * qty[key] });
+          items.push({
+            nama: `TAKIMO (${p[1]}) - ${p[3].replace(/-/g, " ")}`,
+            harga: size,
+            qty: qty[key],
+            sub: size * qty[key],
+            toko: "TAKIMO" // <-- Tambahkan ini
+          });
         } else {
           const [id, note] = key.split("_");
           let menuData;
-          TOKO.forEach(t => t.menu.forEach(m => { if (m.id === id) menuData = m; }));
-          if (menuData) items.push({ nama: `${menuData.nama} (${note.replace(/-/g, " ")})`, harga: menuData.harga, qty: qty[key], sub: menuData.harga * qty[key] });
+          let namaToko = "";
+
+          TOKO.forEach(t => {
+            t.menu.forEach(m => {
+              if (m.id === id) {
+                menuData = m;
+                namaToko = t.nama;
+              }
+            });
+          });
+
+          if (menuData) {
+            items.push({
+              nama: `${menuData.nama} (${note.replace(/-/g, " ")})`,
+              harga: menuData.harga,
+              qty: qty[key],
+              sub: menuData.harga * qty[key],
+              toko: namaToko
+            });
+          }
         }
       });
       return items;
@@ -634,7 +659,7 @@
       box.innerHTML = items.map(i => {
         const itemTotal = i.sub + (ONGKIR * i.qty);
         total += itemTotal;
-        return `<div><strong>${i.nama}</strong> x${i.qty}<br><span style="color:var(--muted)">Rp${i.sub.toLocaleString()} + Ongkir Rp${(ONGKIR * i.qty).toLocaleString()}</span></div>`;
+        return `<div><strong>${i.nama}</strong> x${i.qty}<br><span style="color:var(--muted)">Rp. ${i.sub.toLocaleString()} + Ongkir Rp. ${(ONGKIR * i.qty).toLocaleString()}</span></div>`;
       }).join("<hr style='margin:8px 0; opacity:0.1'>");
       currentGrandTotal = total;
       document.getElementById("total-display").textContent = "Rp" + total.toLocaleString("id-ID");
@@ -670,11 +695,12 @@
         form.append("upload_preset", UPLOAD_PRESET);
         const res = await fetch(CLOUDINARY_URL, { method: "POST", body: form });
         const data = await res.json();
-        await addDoc(collection(db, "orders"), {
+        await addDoc(collection(db, "pesanan"), {
           nama: document.getElementById("nama").value,
           telp: document.getElementById("telp").value,
           items: getItems(),
           totalBayar: currentGrandTotal,
+          status: "menunggu",
           bukti: data.secure_url,
           createdAt: serverTimestamp()
         });
@@ -697,9 +723,9 @@
     const container = document.getElementById("toko-container");
     container.innerHTML = TOKO.map(t => {
       if (t.id === 'toko_d') {
-        return `<div class="store-block"><div class="store-header"><span>${t.icon}</span> <strong>${t.nama}</strong></div><div style="padding:15px"><label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Tahu')"> Tahu</label> &nbsp;<label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Kentang')"> Kentang</label> &nbsp;<label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Cimol')"> Cimol</label><select id="takimo-size" style="width:100%; margin:10px 0; padding:8px; border-radius:5px; border:1px solid var(--border)"><option value="5000">Harga Rp5.000</option><option value="10000">Harga Rp10.000</option></select><input type="text" id="takimo-note" placeholder="Catatan Rasa (Pedas/Ori)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:5px;"><button class="btn-primary" onclick="addTakimo()" style="margin-top:10px; padding:10px; font-size:13px">+ Tambah TAKIMO</button></div></div>`;
+        return `<div class="store-block"><div class="store-header"><span>${t.icon}</span> <strong>${t.nama}</strong></div><div style="padding:15px"><label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Tahu')"> Tahu</label> &nbsp;<label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Kentang')"> Kentang</label> &nbsp;<label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('Cimol')"> Cimol</label><select id="takimo-size" style="width:100%; margin:10px 0; padding:8px; border-radius:5px; border:1px solid var(--border)"><option value="5000">Harga Rp. 5.000</option><option value="10000">Harga Rp. 10.000</option></select><input type="text" id="takimo-note" placeholder="Catatan Rasa (Pedas/Ori)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:5px;"><button class="btn-primary" onclick="addTakimo()" style="margin-top:10px; padding:10px; font-size:13px">+ Tambah TAKIMO</button></div></div>`;
       }
-      return `<div class="store-block"><div class="store-header"><span>${t.icon}</span> <strong>${t.nama}</strong></div>${t.menu.map(m => `<div class="menu-item"><div class="menu-info"><div class="menu-name">${m.nama}</div><div class="menu-harga">Rp${m.harga.toLocaleString()}</div><input type="text" id="note-${m.id}" placeholder="Catatan" style="width:100%; font-size:11px; margin-top:5px; padding:6px; border:1px solid #eee; border-radius:4px;"></div><div class="qty-wrap"><button class="qty-btn" onclick="changeQty('${m.id}', -1)">-</button><span id="qty-${m.id}" style="font-weight:600; min-width:15px; text-align:center">0</span><button class="qty-btn" onclick="changeQty('${m.id}', 1)">+</button></div></div>`).join("")}</div>`;
+      return `<div class="store-block"><div class="store-header"><span>${t.icon}</span> <strong>${t.nama}</strong></div>${t.menu.map(m => `<div class="menu-item"><div class="menu-info"><div class="menu-name">${m.nama}</div><div class="menu-harga">Rp. ${m.harga.toLocaleString()}</div><input type="text" id="note-${m.id}" placeholder="Catatan" style="width:100%; font-size:11px; margin-top:5px; padding:6px; border:1px solid #eee; border-radius:4px;"></div><div class="qty-wrap"><button class="qty-btn" onclick="changeQty('${m.id}', -1)">-</button><span id="qty-${m.id}" style="font-weight:600; min-width:15px; text-align:center">0</span><button class="qty-btn" onclick="changeQty('${m.id}', 1)">+</button></div></div>`).join("")}</div>`;
     }).join("");
   </script>
 </body>

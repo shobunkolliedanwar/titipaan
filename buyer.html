@@ -442,8 +442,8 @@
           <input type="text" id="nama" placeholder="Ketik Nama Kamu">
         </div>
         <div class="field">
-          <label style="font-size:12px; color:var(--muted)">Nomor WA (Opsional)</label>
-          <input type="tel" id="telp" placeholder="0812xxxx">
+          <label>Nomor WA*</label>
+          <input type="tel" id="telp" placeholder="0812xxxx" required>
         </div>
       </div>
 
@@ -456,8 +456,11 @@
         <div class="section-title">Ringkasan Pesanan</div>
         <div id="rekap-box" class="rekap-box">Pilih menu di atas...</div>
         <div class="total-bar">
-          <span>Total + Ongkir</span>
+          <span>Total + Fee Jastip</span>
           <span id="total-display">Rp. 0</span>
+        </div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">
+          Fee jastip Rp. 2.000 / item
         </div>
       </div>
 
@@ -845,8 +848,14 @@
       // 🔥 PAYMENT PAGE (NO HEADER)
       // =========================
       if (boxPayment) {
-        // 🔥 Kosongkan, tidak tampilkan item apapun
-        boxPayment.innerHTML = "";
+        boxPayment.innerHTML = `
+          <div style="font-size:13px; margin-bottom:10px;">
+            Total item: ${items.reduce((sum, i) => sum + i.qty, 0)}
+          </div>
+          <div style="font-weight:600;">
+            Total bayar: Rp ${total.toLocaleString("id-ID")}
+          </div>
+        `;
       }
 
       currentGrandTotal = total;
@@ -859,8 +868,15 @@
     }
 
     window.goToPayment = () => {
-      if (!document.getElementById("nama").value.trim()) return showToast("Isi Nama Kamu");
+      const nama = document.getElementById("nama").value.trim();
+      const telp = document.getElementById("telp").value.trim();
+      const confirmNext = confirm(`Total bayar kamu Rp ${currentGrandTotal.toLocaleString("id-ID")}, lanjut ?`);
+
+      if (!nama) return showToast("Isi Nama Kamu");
+      if (!telp) return showToast("Isi Nomor WA");
+
       if (getItems().length === 0) return showToast("Pilih menu dulu");
+      if (!confirmNext) return;
       showPage('payment');
 
       renderRekap();
@@ -966,7 +982,13 @@
       }).join("");
     }
 
-    // renderToko();
+    // Load dari localStorage
+    document.getElementById("nama").value = localStorage.getItem("nama") || "";
+
+    // Simpan otomatis
+    document.getElementById("nama").addEventListener("input", (e) => {
+      localStorage.setItem("nama", e.target.value);
+    });
   </script>
 </body>
 

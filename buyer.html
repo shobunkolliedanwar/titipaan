@@ -36,6 +36,7 @@
       color: var(--text);
       min-height: 100vh;
       line-height: 1.4;
+      visibility: hidden;
     }
 
     /* OVERLAY TUTUP */
@@ -47,7 +48,7 @@
       height: 100vh;
       background: var(--bg);
       z-index: 9999;
-      display: none;
+      display: flex;
       /* Controlled by JS */
       align-items: center;
       justify-content: center;
@@ -432,7 +433,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <main class="main">
+  <main class="main" style="display:none;" id="main-content">
     <div id="page-order">
       <div class="section">
         <div class="section-title">Data Diri</div>
@@ -489,8 +490,8 @@
 
     <div id="page-success" style="display: none; text-align: center; padding: 4rem 1rem;">
       <div style="font-size: 60px; margin-bottom: 20px;">🎉</div>
-      <h2 style="font-family:'Syne'">Pesanan Diterima!</h2>
-      <p style="color:var(--muted); margin-top:10px;">Admin akan segera memproses pesananmu.</p>
+      <h2 style="font-family:'Syne'">Pesanan Diterima !</h2>
+      <p style="color:var(--muted); margin-top:10px;">Aan segera memproses pesanan kamu.</p>
     </div>
   </main>
 
@@ -546,7 +547,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let isOpen = true;
+    let isOpen = null;
     let qty = {
       siang: {},
       sore: {}
@@ -902,18 +903,36 @@
     };
 
     onSnapshot(doc(db, "settings", "jastip"), (s) => {
-      if (s.exists()) {
-        isOpen = s.data().open;
-        const b = document.getElementById("header-badge");
-        const overlay = document.getElementById("closed-overlay");
-        b.textContent = isOpen ? "BUKA" : "TUTUP";
-        b.className = `badge-status ${isOpen ? 'badge-open' : 'badge-closed'}`;
-        overlay.style.display = isOpen ? "none" : "flex";
-        document.body.style.overflow = isOpen ? "auto" : "hidden";
+      if (!s.exists()) return;
+
+      isOpen = s.data().open;
+
+      const b = document.getElementById("header-badge");
+      const overlay = document.getElementById("closed-overlay");
+      const main = document.getElementById("main-content");
+
+      // 🔥 tampilkan body setelah data siap
+      document.body.style.visibility = "visible";
+
+      b.textContent = isOpen ? "BUKA" : "TUTUP";
+      b.className = `badge-status ${isOpen ? 'badge-open' : 'badge-closed'}`;
+
+      if (isOpen) {
+        overlay.style.display = "none";
+        main.style.display = "block";
+        document.body.style.overflow = "auto";
+
+        renderToko();
+      } else {
+        overlay.style.display = "flex";
+        main.style.display = "none";
+        document.body.style.overflow = "hidden";
       }
     });
 
     function renderToko() {
+      if (!isOpen) return; // 🔥 STOP kalau tutup
+
       const container = document.getElementById("toko-container");
 
       const TOKO = currentTab === "siang" ? TOKO_SIANG : TOKO_SORE;
@@ -947,7 +966,7 @@
       }).join("");
     }
 
-    renderToko();
+    // renderToko();
   </script>
 </body>
 

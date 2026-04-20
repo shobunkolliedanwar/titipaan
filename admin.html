@@ -693,7 +693,8 @@
       setDoc,
       getDoc,
       query,
-      orderBy
+      orderBy,
+      deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     import {
@@ -774,6 +775,57 @@
       }
     ];
 
+    const ALL_MENU = [
+      {
+        id: "toko_a", nama: "Ayam Bakar Viar Merah", icon: "🍗", menu: [
+          { id: "a1", nama: "Nasi Ayam (Bakar/Goreng)", harga: 22000 },
+          { id: "a2", nama: "Nasi Ikan Nila (Bakar/Goreng)", harga: 22000 },
+          { id: "a3", nama: "Nasi Lele (Bakar/Goreng)", harga: 15000 },
+          { id: "a4", nama: "Ayam Saja", harga: 17000 },
+          { id: "a5", nama: "Ikan Nila Saja", harga: 17000 },
+          { id: "a6", nama: "Lele Saja", harga: 12000 },
+          { id: "a7", nama: "Tahu", harga: 3000 },
+          { id: "a8", nama: "Tempe", harga: 3000 },
+          { id: "a9", nama: "Sate Usus/Kulit/Ampela", harga: 5000 }
+        ]
+      },
+      {
+        id: "toko_b", nama: "Ayam Bakar Viar Biru", icon: "🍗", menu: [
+          { id: "b1", nama: "Nasi Ayam (Bakar/Goreng)", harga: 25000 },
+          { id: "b2", nama: "Nasi Ikan Nila (Bakar/Goreng)", harga: 25000 },
+          { id: "b3", nama: "Nasi Lele (Bakar/Goreng)", harga: 15000 },
+          { id: "b4", nama: "Nasi Ikan Kembung", harga: 22000 },
+          { id: "b5", nama: "Ayam Saja", harga: 20000 },
+          { id: "b6", nama: "Ikan Nila Saja", harga: 20000 },
+          { id: "b7", nama: "Lele Saja", harga: 12000 },
+          { id: "b8", nama: "Tahu", harga: 3000 },
+          { id: "b9", nama: "Tempe", harga: 3000 }
+        ]
+      },
+      {
+        id: "toko_c", nama: "Ayam Cabai Hijau", icon: "🍗", menu: [
+          { id: "c1", nama: "Nasi Ayam Hijau", harga: 22000 },
+          { id: "c2", nama: "Ayam Hijau Saja", harga: 17000 },
+          { id: "c3", nama: "Tahu/Tempe", harga: 3000 }
+        ]
+      },
+      { id: "toko_d", nama: "TAKIMO", icon: "🍢", menu: [{ id: "d1", nama: "TAKIMO Builder", harga: 0 }] },
+      {
+        id: "toko_e", nama: "Gado - Gado", icon: "🥗", menu: [
+          { id: "e1", nama: "Gado - Gado Biasa", harga: 12000 },
+          { id: "e2", nama: "Gado - Gado + Nasi/Lontong", harga: 16000 },
+          { id: "e3", nama: "Gado - Gado Lengkap Telor", harga: 20000 }
+        ]
+      },
+      {
+        id: "toko_f", nama: "Ketoprak", icon: "🍲", menu: [
+          { id: "f1", nama: "Ketoprak Biasa", harga: 12000 },
+          { id: "f2", nama: "Ketoprak Biasa + Nasi/Lontong", harga: 16000 },
+          { id: "f3", nama: "Ketoprak + Telor Dadar", harga: 20000 }
+        ]
+      }
+    ];
+
     /* =========================
        STATE
     ========================= */
@@ -785,6 +837,7 @@
       from: null,
       to: null
     };
+    let editingOrder = null;
 
     /* =========================
        DEBUG
@@ -841,6 +894,101 @@
       return result;
     }
 
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+
+      setTimeout(() => {
+        t.classList.remove("show");
+      }, 2000);
+    }
+
+    // function edit
+    function renderEditTotal() {
+      const ONGKIR = 2000;
+
+      let total = 0;
+      let totalQty = 0;
+
+      editingOrder.items.forEach(i => {
+        total += i.harga * i.qty;
+        totalQty += i.qty;
+      });
+
+      total += totalQty * ONGKIR;
+
+      editingOrder.totalBayar = total;
+
+      document.getElementById("edit-container").innerHTML += `
+        <div style="margin-top:15px; font-weight:600">
+          Total + Fee: Rp ${total.toLocaleString("id-ID")}
+        </div>
+      `;
+    }
+
+    function renderEditModal() {
+      const container = document.getElementById("edit-container");
+
+      if (!editingOrder) return;
+
+      // =====================
+      // 🔥 CURRENT ITEMS
+      // =====================
+      const currentItems = editingOrder.items.map((item, i) => `
+        <div style="border-bottom:1px solid var(--border); padding:10px 0">
+          <div style="font-weight:600">${item.nama}</div>
+          <div style="font-size:12px; color:var(--muted)">
+            ${item.toko}
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:6px">
+            <button onclick="editQty(${i}, -1)">-</button>
+            <span>${item.qty}</span>
+            <button onclick="editQty(${i}, 1)">+</button>
+
+            <button style="margin-left:auto; color:red"
+              onclick="removeItem(${i})">
+              Hapus
+            </button>
+          </div>
+        </div>
+      `).join("");
+
+      // =====================
+      // 🔥 ALL MENU (ADD)
+      // =====================
+      const allMenuHTML = ALL_MENU.map(toko => `
+        <div style="margin-top:15px">
+          <div style="font-weight:600">${toko.nama}</div>
+
+          ${toko.menu.map(m => `
+            <div style="display:flex; justify-content:space-between; padding:6px 0">
+              <span>${m.nama}</span>
+              <button onclick="addItem('${toko.nama}','${m.nama}',${m.harga})">
+                + Tambah
+              </button>
+            </div>
+          `).join("")}
+        </div>
+      `).join("");
+
+      container.innerHTML = `
+        <div>
+          <div style="font-weight:600; margin-bottom:10px">Pesanan Saat Ini</div>
+          ${currentItems || "Kosong"}
+        </div>
+
+        <hr style="margin:15px 0; opacity:0.1">
+
+        <div>
+          <div style="font-weight:600">Tambah Menu</div>
+          ${allMenuHTML}
+        </div>
+      `;
+
+      renderEditTotal();
+    }
     /* =========================
        LOGIN
     ========================= */
@@ -1039,6 +1187,105 @@
       win.print();
     };
 
+    window.editOrder = async function (id, namaLama, telpLama) {
+      const namaBaru = prompt("Edit nama:", namaLama);
+      if (!namaBaru) return;
+
+      const telpBaru = prompt("Edit nomor WA:", telpLama);
+      if (!telpBaru) return;
+
+      try {
+        await updateDoc(doc(db, "pesanan", id), {
+          nama: namaBaru,
+          telp: telpBaru
+        });
+
+        showToast("Pesanan diupdate");
+      } catch (err) {
+        console.error(err);
+        showToast("Gagal update");
+      }
+    };
+
+    window.openEditById = function (id) {
+      const order = allOrders.find(o => o.id === id);
+      if (!order) return;
+
+      editingOrder = JSON.parse(JSON.stringify(order)); // clone
+
+      renderEditModal();
+      document.getElementById("edit-modal").classList.add("open");
+    };
+
+    window.editQty = function (index, delta) {
+      const item = editingOrder.items[index];
+      item.qty = Math.max(1, item.qty + delta);
+      item.sub = item.harga * item.qty;
+
+      renderEditModal();
+    };
+
+    window.removeItem = function (index) {
+      editingOrder.items.splice(index, 1);
+      renderEditModal();
+    };
+
+    window.saveEdit = async function () {
+      if (!editingOrder) return;
+
+      try {
+        await updateDoc(doc(db, "pesanan", editingOrder.id), {
+          items: editingOrder.items,
+          totalBayar: editingOrder.totalBayar
+        });
+
+        showToast("Pesanan berhasil diupdate");
+        closeEdit();
+      } catch (err) {
+        console.error(err);
+        showToast("Gagal update");
+      }
+    };
+
+    window.closeEdit = function () {
+      document.getElementById("edit-modal").classList.remove("open");
+    };
+
+    window.addItem = function (toko, nama, harga) {
+
+      // cek apakah item sudah ada
+      const existing = editingOrder.items.find(i =>
+        i.nama === nama && i.toko === toko
+      );
+
+      if (existing) {
+        existing.qty += 1;
+        existing.sub = existing.harga * existing.qty;
+      } else {
+        editingOrder.items.push({
+          toko,
+          nama,
+          harga,
+          qty: 1,
+          sub: harga
+        });
+      }
+
+      renderEditModal();
+    };
+
+    window.deleteOrder = async function (id) {
+      const confirmDelete = confirm("Yakin mau hapus pesanan ini ?");
+      if (!confirmDelete) return;
+
+      try {
+        await deleteDoc(doc(db, "pesanan", id));
+        showToast("Pesanan dihapus");
+      } catch (err) {
+        console.error(err);
+        showToast("Gagal hapus");
+      }
+    };
     /* =========================
        FIRESTORE STATUS
     ========================= */
@@ -1309,6 +1556,14 @@
         ⟳ Cycle
       </button>
 
+      <button class="btn btn-accent" onclick="openEditById('${o.id}')">
+        ✏️ Edit
+      </button>
+
+      <button class="btn btn-red" onclick="deleteOrder('${o.id}')">
+        🗑 Hapus
+      </button>
+
       ${o.bukti ? `
         <button class="btn btn-accent" onclick="lihatBukti('${o.bukti}')">
           🧾 Bukti Bayar
@@ -1553,6 +1808,23 @@
       <button class="modal-close" onclick="tutupModal()">✕</button>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:600">Bukti Bayar</div>
       <img id="bukti-img" src="" alt="Bukti bayar">
+    </div>
+  </div>
+
+  <!-- Modal Edit -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal-box" style="max-width:600px">
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+
+      <div style="font-family:'Syne'; font-size:16px; font-weight:600">
+        Edit Pesanan
+      </div>
+
+      <div id="edit-container" style="margin-top:15px"></div>
+
+      <button class="btn btn-accent" style="margin-top:15px; width:100%" onclick="saveEdit()">
+        Simpan Perubahan
+      </button>
     </div>
   </div>
 

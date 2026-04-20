@@ -608,23 +608,24 @@
       },
       {
         id: "toko_f", nama: "Ketoprak", icon: "🍲", menu: [
-          { id: "f1", nama: "Ketoprak Biasa", harga: 15000 },
-          { id: "f2", nama: "Ketoprak + Telor Dadar", harga: 20000 }
+          { id: "f1", nama: "Ketoprak Biasa", harga: 12000 },
+          { id: "f2", nama: "Ketoprak Biasa + Nasi/Lontong", harga: 16000 },
+          { id: "f3", nama: "Ketoprak + Telor Dadar", harga: 20000 }
         ]
       }
     ];
 
     const TOKO_SORE = [
-      {
-        id: "toko_s1",
-        nama: "Jajanan Sore",
-        icon: "🍩",
-        menu: [
-          { id: "s1", nama: "Donat", harga: 8000 },
-          { id: "s2", nama: "Cilok", harga: 5000 },
-          { id: "s3", nama: "Es Teh", harga: 4000 }
-        ]
-      }
+      // {
+      //   id: "toko_s1",
+      //   nama: "Jajanan Sore",
+      //   icon: "🍩",
+      //   menu: [
+      //     { id: "s1", nama: "Donat", harga: 8000 },
+      //     { id: "s2", nama: "Cilok", harga: 5000 },
+      //     { id: "s3", nama: "Es Teh", harga: 4000 }
+      //   ]
+      // }
     ];
 
     window.showToast = (msg) => {
@@ -952,6 +953,28 @@
       const container = document.getElementById("toko-container");
 
       const TOKO = currentTab === "siang" ? TOKO_SIANG : TOKO_SORE;
+
+      // 🔥 kalau tab sore & belum ada toko
+      if (currentTab === "sore" && TOKO.length === 0) {
+        container.innerHTML = `
+          <div style="
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+          ">
+            <div style="font-size:40px; margin-bottom:10px;">🍩</div>
+            <h3 style="font-family:'Syne'; margin-bottom:8px;">
+              Jastip Saat Ini Hanya Tersedia di Makan Siang
+            </h3>
+            <p style="color:var(--muted); font-size:14px;">
+              Pantengin lagi nanti ya buat jajan sore 😄
+            </p>
+          </div>
+        `;
+        return;
+      }
 
       container.innerHTML = TOKO.map(t => {
         if (t.id === 'toko_d') {

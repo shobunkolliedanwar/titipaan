@@ -859,6 +859,11 @@
       loadStatus();
       subscribeOrders();
 
+      // 🔥 AUTO CLOSE CHECK
+      checkAutoClose(); // langsung cek saat load
+      setInterval(checkAutoClose, 60000); // cek tiap 1 menit
+      setInterval(checkAutoOpen, 60000);
+
       // auto open tab pesanan biar gak stuck UI
       window.switchTab?.("pesanan");
     }
@@ -1303,6 +1308,41 @@
       }
     }
 
+    function checkAutoClose() {
+      const now = new Date();
+
+      const jam = now.getHours();
+      const menit = now.getMinutes();
+
+      // 🔥 batas tutup = 10:45
+      if (jam > 10 || (jam === 10 && menit >= 45)) {
+        if (isOpen) {
+          isOpen = false;
+
+          setDoc(doc(db, "settings", "jastip"), { open: false });
+
+          updateToggleUI();
+
+          console.log("AUTO CLOSE AKTIF (10:45)");
+        }
+      }
+    }
+
+    function checkAutoOpen() {
+      const now = new Date();
+
+      const jam = now.getHours();
+      const menit = now.getMinutes();
+
+      if (jam === 0 && menit === 0) {
+        setDoc(doc(db, "settings", "jastip"), { open: true });
+        isOpen = true;
+        updateToggleUI();
+
+        console.log("AUTO OPEN (00:00)");
+      }
+    }
+
     function updateToggleUI() {
       const tog = document.getElementById("toggle-btn");
       const lbl = document.getElementById("toggle-label");
@@ -1433,22 +1473,36 @@
     }
 
     function renderStats() {
-      // PAKAI allOrders supaya statistik menghitung SEMUA data di database
       const data = allOrders;
 
       const total = data.length;
       const lunas = data.filter(o => o.status === "lunas").length;
       const menunggu = data.filter(o => o.status === "menunggu").length;
 
-      // Omzet biasanya hanya menghitung yang sudah Lunas
       const omzet = data
         .filter(o => o.status === "lunas")
         .reduce((a, o) => a + (o.totalBayar || o.grandTotal || 0), 0);
 
+      // 🔥 TAMBAHAN: HITUNG FEE
+      const ONGKIR = 2000;
+
+      const totalFee = data
+        .filter(o => o.status === "lunas") // biasanya hanya dari yg lunas
+        .reduce((acc, order) => {
+          const totalQty = (order.items || [])
+            .reduce((q, i) => q + (i.qty || 0), 0);
+
+          return acc + (totalQty * ONGKIR);
+        }, 0);
+
       document.getElementById("stat-total").textContent = total;
       document.getElementById("stat-lunas").textContent = lunas;
       document.getElementById("stat-menunggu").textContent = menunggu;
-      document.getElementById("stat-omzet").textContent = "Rp" + (omzet.toLocaleString('id-ID'));
+      document.getElementById("stat-omzet").textContent = "Rp. " + omzet.toLocaleString("id-ID");
+
+      // 🔥 SET KE UI
+      document.getElementById("stat-fee").textContent =
+        "Rp. " + totalFee.toLocaleString("id-ID");
     }
 
     /* =========================
@@ -1759,6 +1813,10 @@
         <div class="stat-card">
           <div class="stat-num stat-accent" id="stat-omzet">Rp0</div>
           <div class="stat-label">Total pemasukan</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-fee">Rp. 0</div>
+          <div class="stat-label">Total Fee</div>
         </div>
       </div>
 

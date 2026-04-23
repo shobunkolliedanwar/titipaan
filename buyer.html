@@ -304,7 +304,7 @@
       padding: 10px;
       background: var(--bg);
       position: sticky;
-      top: 56px;
+      top: 60px;
       z-index: 90;
     }
 
@@ -422,8 +422,16 @@
   </div>
 
   <header class="header">
-    <div class="header-logo">Titipaan</div>
-    <div id="header-badge" class="badge-status badge-closed">Mengecek...</div>
+    <div class="header-logo" onclick="goHome()" style="cursor:pointer;">
+      Titipaan
+    </div>
+    <div style="display:flex; gap:20px; align-items:center;">
+      <button onclick="showCheckOrder()"
+        style="background:white; color:black; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px;">
+        🔍 Cek Pesanan
+      </button>
+      <div id="header-badge" class="badge-status badge-closed">Mengecek...</div>
+    </div>
   </header>
 
   <div class="tab-wrapper">
@@ -495,6 +503,32 @@
       <div style="font-size: 60px; margin-bottom: 20px;">🎉</div>
       <h2 style="font-family:'Syne'">Pesanan Diterima !</h2>
       <p style="color:var(--muted); margin-top:10px;">Aan segera memproses pesanan kamu.</p>
+
+      <div id="order-code-box" style="margin-top:20px; font-weight:600;"></div>
+
+      <button class="btn-primary" style="margin-top:20px;" onclick="showCheckOrder()">
+        Lihat Detail Pesanan
+      </button>
+    </div>
+
+    <div id="page-check" style="display:none; padding:2rem;">
+      <h2 style="font-family:'Syne'">Cek Pesanan</h2>
+
+      <input type="text" id="input-kode" placeholder="Masukkan kode pesanan"
+        style="width:100%; padding:12px; margin-top:15px; border:1px solid #ddd; border-radius:8px;">
+
+      <button class="btn-primary" style="margin-top:15px;" onclick="checkOrder()">
+        Cari Pesanan
+      </button>
+
+      <div id="result-order" style="margin-top:20px;"></div>
+
+      <div style="margin-top:20px; display:flex; justify-content:center; align-items:center;">
+        <button onclick="goHome()"
+          style="padding:6px 12px; border:none; border-radius:6px; background:#333; color:#fff; cursor:pointer;">
+          ⬅ Pesan Lagi
+        </button>
+      </div>
     </div>
   </main>
 
@@ -522,6 +556,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, addDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     // dev
     // const firebaseConfig = {
@@ -632,18 +667,93 @@
       setTimeout(() => t.style.display = "none", 2500);
     };
 
+    window.showCheckOrder = () => {
+      showPage('check');
+
+      const last = localStorage.getItem("lastOrderCode");
+      if (last) {
+        document.getElementById("input-kode").value = last;
+        checkOrder();
+      }
+    };
+
+    window.checkOrder = async () => {
+      const kode = document.getElementById("input-kode").value.trim();
+
+      if (!kode) return showToast("Masukkan kode dulu");
+
+      const q = query(collection(db, "pesanan"), where("kode", "==", kode));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        document.getElementById("result-order").innerHTML =
+          "<p style='color:red'>Pesanan tidak ditemukan</p>";
+        return;
+      }
+
+      const data = snap.docs[0].data();
+
+      const grouped = {};
+
+      data.items.forEach(item => {
+        if (!grouped[item.toko]) {
+          grouped[item.toko] = [];
+        }
+        grouped[item.toko].push(item);
+      });
+
+      document.getElementById("result-order").innerHTML = `
+        <div class="rekap-box">
+          <strong>Nama :</strong> ${data.nama}<br>
+          <strong>Total :</strong> Rp. ${data.totalBayar.toLocaleString()}<br>
+          <strong>Status :</strong> ${data.status}<br><br>
+
+          <strong>Pesanan :</strong><br>
+          ${Object.keys(grouped).map(toko => `
+            <div style="margin-top:10px;">
+              <div style="font-weight:bold;">🏪 ${toko}</div>
+              ${grouped[toko].map(i => {
+                const lastBracket = i.nama.lastIndexOf('(');
+                const lastClose = i.nama.lastIndexOf(')');
+
+                let namaMenu = i.nama;
+                let catatan = null;
+
+                if (lastBracket !== -1 && lastClose !== -1 && lastClose > lastBracket) {
+                  namaMenu = i.nama.substring(0, lastBracket).trim();
+                  catatan = i.nama.substring(lastBracket + 1, lastClose).trim();
+                }
+
+                return `
+                  <div style="margin-left:10px;">
+                    ${namaMenu} x${i.qty}
+                    ${catatan ? `<div style="font-size:12px; color:gray;">📝 Catatan : ${catatan}</div>` : ''}
+                  </div>
+                `;
+                    }).join("")}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    };
+
     window.showPage = (page) => {
       currentPage = page;
 
       document.getElementById("page-order").style.display = page === 'order' ? 'block' : 'none';
       document.getElementById("page-payment").style.display = page === 'payment' ? 'block' : 'none';
       document.getElementById("page-success").style.display = page === 'success' ? 'block' : 'none';
+      document.getElementById("page-check").style.display = page === 'check' ? 'block' : 'none';
       document.querySelector(".tab-wrapper").style.display =
         page === "payment" ? "none" : "flex";
 
       renderRekap();
 
       window.scrollTo(0, 0);
+    };
+
+    window.goHome = () => {
+      showPage('order');
     };
 
     window.switchTab = (tab) => {
@@ -866,6 +976,17 @@
         "Rp" + total.toLocaleString("id-ID");
     }
 
+    function generateOrderCode() {
+      const date = new Date();
+      const y = date.getFullYear().toString().slice(-2);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+      return `ORD-${y}${m}${d}-${random}`;
+    }
+
     window.goToPayment = () => {
       const nama = document.getElementById("nama").value.trim();
       const telp = document.getElementById("telp").value.trim();
@@ -904,7 +1025,9 @@
         form.append("upload_preset", UPLOAD_PRESET);
         const res = await fetch(CLOUDINARY_URL, { method: "POST", body: form });
         const data = await res.json();
+        const orderCode = generateOrderCode();
         await addDoc(collection(db, "pesanan"), {
+          kode: orderCode,
           nama: document.getElementById("nama").value,
           telp: document.getElementById("telp").value,
           items: getItems(),
@@ -913,6 +1036,10 @@
           bukti: data.secure_url,
           createdAt: serverTimestamp()
         });
+        document.getElementById("order-code-box").innerHTML =
+          "Kode Pesanan:<br><strong>" + orderCode + "</strong>";
+
+        localStorage.setItem("lastOrderCode", orderCode);
         showPage('success');
       } catch (e) { showToast("Gagal kirim pesanan"); btn.disabled = false; btn.textContent = "Konfirmasi Pesanan"; }
     };

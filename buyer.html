@@ -631,19 +631,25 @@
           { id: "c3", nama: "Tahu/Tempe", harga: 3000 }
         ]
       },
-      { id: "toko_d", nama: "TAKIMO", icon: "🍢", menu: [{ id: "d1", nama: "TAKIMO Builder", harga: 0 }] },
       {
-        id: "toko_e", nama: "Gado - Gado", icon: "🥗", menu: [
-          { id: "e1", nama: "Gado - Gado Biasa", harga: 12000 },
-          { id: "e2", nama: "Gado - Gado + Nasi/Lontong", harga: 16000 },
-          { id: "e3", nama: "Gado - Gado Lengkap Telor", harga: 20000 }
+        id: "toko_d", nama: "Bakso", icon: "🍗", menu: [
+          { id: "d1", nama: "Bakso Biasa", harga: 15000 },
+          { id: "d2", nama: "Bakso Besar", harga: 17000 },
+        ]
+      },
+      { id: "toko_e", nama: "TAKIMO", icon: "🍢", menu: [{ id: "e1", nama: "TAKIMO Builder", harga: 0 }] },
+      {
+        id: "toko_f", nama: "Gado - Gado", icon: "🥗", menu: [
+          { id: "f1", nama: "Gado - Gado Biasa", harga: 12000 },
+          { id: "f2", nama: "Gado - Gado + Nasi/Lontong", harga: 16000 },
+          { id: "f3", nama: "Gado - Gado Lengkap Telor", harga: 20000 }
         ]
       },
       {
-        id: "toko_f", nama: "Ketoprak", icon: "🍲", menu: [
-          { id: "f1", nama: "Ketoprak Biasa", harga: 12000 },
-          { id: "f2", nama: "Ketoprak Biasa + Nasi/Lontong", harga: 16000 },
-          { id: "f3", nama: "Ketoprak + Telor Dadar", harga: 20000 }
+        id: "toko_g", nama: "Ketoprak", icon: "🍲", menu: [
+          { id: "g1", nama: "Ketoprak Biasa", harga: 12000 },
+          { id: "g2", nama: "Ketoprak Biasa + Nasi/Lontong", harga: 16000 },
+          { id: "g3", nama: "Ketoprak + Telor Dadar", harga: 20000 }
         ]
       }
     ];
@@ -713,24 +719,24 @@
             <div style="margin-top:10px;">
               <div style="font-weight:bold;">🏪 ${toko}</div>
               ${grouped[toko].map(i => {
-                const lastBracket = i.nama.lastIndexOf('(');
-                const lastClose = i.nama.lastIndexOf(')');
+        const lastBracket = i.nama.lastIndexOf('(');
+        const lastClose = i.nama.lastIndexOf(')');
 
-                let namaMenu = i.nama;
-                let catatan = null;
+        let namaMenu = i.nama;
+        let catatan = null;
 
-                if (lastBracket !== -1 && lastClose !== -1 && lastClose > lastBracket) {
-                  namaMenu = i.nama.substring(0, lastBracket).trim();
-                  catatan = i.nama.substring(lastBracket + 1, lastClose).trim();
-                }
+        if (lastBracket !== -1 && lastClose !== -1 && lastClose > lastBracket) {
+          namaMenu = i.nama.substring(0, lastBracket).trim();
+          catatan = i.nama.substring(lastBracket + 1, lastClose).trim();
+        }
 
-                return `
+        return `
                   <div style="margin-left:10px;">
                     ${namaMenu} x${i.qty}
                     ${catatan ? `<div style="font-size:12px; color:gray;">📝 Catatan : ${catatan}</div>` : ''}
                   </div>
                 `;
-                    }).join("")}
+      }).join("")}
             </div>
           `).join("")}
         </div>
@@ -809,6 +815,10 @@
         return showToast("Pilih isi TAKIMO");
       }
 
+      if (!note) {
+        return showToast("Catatan TAKIMO wajib diisi");
+      }
+
       const noteSafe = note ? note.replace(/\s/g, "-") : "normal";
       const size = parseInt(document.getElementById("takimo-size").value);
 
@@ -854,7 +864,7 @@
             items.push({
               tab,
               toko: "TAKIMO",
-              nama: `TAKIMO (${p[1]}) - ${p[3].replace(/-/g, " ")}`,
+              nama: `TAKIMO (${p[1]})${p[3] ? ' - ' + p[3].replace(/-/g, " ") : ''}`,
               harga: size,
               qty: cart[key],
               sub: size * cart[key]
@@ -1102,8 +1112,40 @@
       }
 
       container.innerHTML = TOKO.map(t => {
-        if (t.id === 'toko_d') {
-          return `...` // TAKIMO tetap
+        if (t.id === 'toko_e') {
+          return `
+            <div class="store-block">
+              <div class="store-header">
+                <span>${t.icon}</span> <strong>${t.nama}</strong>
+              </div>
+
+              <div style="padding:1rem;">
+
+                <div style="font-size:13px; margin-bottom:8px;">Pilih isi TAKIMO:</div>
+
+                <label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('tahu')"> Tahu</label><br>
+                <label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('kentang')"> Kentang</label><br>
+                <label><input type="checkbox" class="takimo-check" onchange="toggleTakimo('cimol')"> Cimol</label><br>
+
+                <div style="margin-top:10px;">
+                  <label>Size:</label>
+                  <select id="takimo-size" style="width:100%; padding:6px;">
+                    <option value="5000">5K</option>
+                    <option value="10000">10K</option>
+                    <option value="15000">15K</option>
+                  </select>
+                </div>
+
+                <input type="text" id="takimo-note" placeholder="Catatan (opsional)"
+                  style="width:100%; margin-top:10px; padding:6px; border:1px solid #eee; border-radius:4px;">
+
+                <button onclick="addTakimo()" class="btn-primary" style="margin-top:10px;">
+                  + Tambah TAKIMO
+                </button>
+
+              </div>
+            </div>
+            `;
         }
 
         return `

@@ -860,9 +860,9 @@
       subscribeOrders();
 
       // 🔥 AUTO CLOSE CHECK
-      checkAutoClose(); // langsung cek saat load
-      setInterval(checkAutoClose, 60000); // cek tiap 1 menit
-      setInterval(checkAutoOpen, 60000);
+      // checkAutoClose(); // langsung cek saat load
+      // setInterval(checkAutoClose, 60000); // cek tiap 1 menit
+      // setInterval(checkAutoOpen, 60000);
 
       // auto open tab pesanan biar gak stuck UI
       window.switchTab?.("pesanan");
@@ -1308,40 +1308,40 @@
       }
     }
 
-    function checkAutoClose() {
-      const now = new Date();
+    // function checkAutoClose() {
+    //   const now = new Date();
 
-      const jam = now.getHours();
-      const menit = now.getMinutes();
+    //   const jam = now.getHours();
+    //   const menit = now.getMinutes();
 
-      // 🔥 batas tutup = 10:45
-      if (jam > 10 || (jam === 10 && menit >= 45)) {
-        if (isOpen) {
-          isOpen = false;
+    //   // 🔥 batas tutup = 10:45
+    //   if (jam > 10 || (jam === 10 && menit >= 45)) {
+    //     if (isOpen) {
+    //       isOpen = false;
 
-          setDoc(doc(db, "settings", "jastip"), { open: false });
+    //       setDoc(doc(db, "settings", "jastip"), { open: false });
 
-          updateToggleUI();
+    //       updateToggleUI();
 
-          console.log("AUTO CLOSE AKTIF (10:45)");
-        }
-      }
-    }
+    //       console.log("AUTO CLOSE AKTIF (10:45)");
+    //     }
+    //   }
+    // }
 
-    function checkAutoOpen() {
-      const now = new Date();
+    // function checkAutoOpen() {
+    //   const now = new Date();
 
-      const jam = now.getHours();
-      const menit = now.getMinutes();
+    //   const jam = now.getHours();
+    //   const menit = now.getMinutes();
 
-      if (jam === 0 && menit === 0) {
-        setDoc(doc(db, "settings", "jastip"), { open: true });
-        isOpen = true;
-        updateToggleUI();
+    //   if (jam === 0 && menit === 0) {
+    //     setDoc(doc(db, "settings", "jastip"), { open: true });
+    //     isOpen = true;
+    //     updateToggleUI();
 
-        console.log("AUTO OPEN (00:00)");
-      }
-    }
+    //     console.log("AUTO OPEN (00:00)");
+    //   }
+    // }
 
     function updateToggleUI() {
       const tog = document.getElementById("toggle-btn");

@@ -640,7 +640,6 @@
     }
 
     @media print {
-
       .header,
       .tabs,
       .filter-bar,
@@ -977,12 +976,13 @@
     window.switchTab = function (tab) {
       const isRekap = tab === "rekap";
 
+      // Update tab content visibility
+      document.getElementById("content-rekap").style.display = isRekap ? "block" : "none";
+      document.getElementById("content-pesanan").style.display = !isRekap ? "block" : "none";
+
+      // Update tab button active state
       document.getElementById("tab-rekap").classList.toggle("active", isRekap);
       document.getElementById("tab-pesanan").classList.toggle("active", !isRekap);
-
-      document.querySelectorAll(".tab").forEach(btn => {
-        btn.classList.remove("active");
-      });
 
       debug("SWITCH TAB", tab);
     };
@@ -1250,7 +1250,7 @@
           }
 
           existing.items.push(item);
-          existing.total += item.sub || 0;
+          existing.total += (item.sub || 0);
         });
       });
 
@@ -1434,7 +1434,6 @@
       const container = document.getElementById("kategori-rekap-container");
       if (!container) return;
 
-      const kategoriData = {};
       const allItemsByKategori = {};
 
       // Collect all items grouped by kategori dari orders
@@ -1459,56 +1458,27 @@
             }
 
             allItemsByKategori[kategoriNama].items[item.nama].qty += item.qty;
-            allItemsByKategori[kategoriNama].items[item.nama].total += item.sub;
+            allItemsByKategori[kategoriNama].items[item.nama].total += (item.sub || 0);
 
-            allItemsByKategori[kategoriNama].total += item.sub;
+            allItemsByKategori[kategoriNama].total += (item.sub || 0);
           });
         });
 
-      // Initialize ALL_KATEGORI data
-      ALL_KATEGORI.forEach(k => {
-        kategoriData[k.id] = {
-          ...k,
-          total: 0,
-          items: {}
-        };
-      });
-
-      // Merge dengan allItemsByKategori berdasarkan nama
-      ALL_KATEGORI.forEach(k => {
-        if (allItemsByKategori[k.nama]) {
-          kategoriData[k.id] = {
-            ...kategoriData[k.id],
-            ...allItemsByKategori[k.nama]
-          };
-        }
-      });
-
-      // Render cards
-      let rendered = ALL_KATEGORI.map(k => {
-        const data = kategoriData[k.id];
+      // Render all kategori yang ada di data (flexible matching)
+      let rendered = Object.keys(allItemsByKategori).sort().map(kategoriNama => {
+        const data = allItemsByKategori[kategoriNama];
         const items = Object.entries(data.items);
 
-        if (!items.length) {
-          return `
-        <div class="kategori-rekap-card">
-          <div class="kategori-rekap-header">
-            <span class="kategori-rekap-icon">${k.nama.split(' ')[0]}</span>
-            <div>
-              <div class="kategori-rekap-nama">${k.nama}</div>
-              <div class="kategori-rekap-total">Belum ada pesanan</div>
-            </div>
-          </div>
-        </div>
-      `;
-        }
+        // Get emoji dari ALL_KATEGORI jika ada match
+        const matchedKat = ALL_KATEGORI.find(k => k.nama.includes(kategoriNama) || kategoriNama.includes(k.nama.replace(/[^\w\s]/g, '')));
+        const icon = matchedKat ? matchedKat.nama.split(' ')[0] : "📦";
 
         return `
       <div class="kategori-rekap-card">
         <div class="kategori-rekap-header">
-          <span class="kategori-rekap-icon">${k.nama.split(' ')[0]}</span>
+          <span class="kategori-rekap-icon">${icon}</span>
           <div>
-            <div class="kategori-rekap-nama">${k.nama}</div>
+            <div class="kategori-rekap-nama">${kategoriNama}</div>
             <div class="kategori-rekap-total">Rp${fmt(data.total)}</div>
           </div>
         </div>
@@ -1524,35 +1494,7 @@
     `;
       }).join("");
 
-      // Add "Lainnya" category jika ada items yang tidak cocok
-      if (allItemsByKategori["Lainnya"] || allItemsByKategori[undefined]) {
-        const lainnyaData = allItemsByKategori["Lainnya"] || allItemsByKategori[undefined] || { total: 0, items: {} };
-        const items = Object.entries(lainnyaData.items);
-
-        if (items.length > 0) {
-          rendered += `
-        <div class="kategori-rekap-card">
-          <div class="kategori-rekap-header">
-            <span class="kategori-rekap-icon">📦</span>
-            <div>
-              <div class="kategori-rekap-nama">Lainnya</div>
-              <div class="kategori-rekap-total">Rp${fmt(lainnyaData.total)}</div>
-            </div>
-          </div>
-
-          ${items.map(([nama, v]) => `
-            <div class="kategori-rekap-item">
-              <span class="kategori-rekap-item-nama">${nama}</span>
-              <span class="kategori-rekap-item-qty">x${v.qty}</span>
-              <span class="kategori-rekap-item-total">Rp${fmt(v.total)}</span>
-            </div>
-          `).join("")}
-        </div>
-      `;
-        }
-      }
-
-      container.innerHTML = rendered;
+      container.innerHTML = rendered || `<div class="empty-state">Belum ada pesanan</div>`;
     }
 
     /* =========================
@@ -1658,7 +1600,7 @@
       </div>
 
       <!-- TAB REKAP KATEGORI -->
-      <div id="tab-rekap" class="tab-content active">
+      <div id="content-rekap" class="tab-content active">
         <div class="section-header">
           <div class="section-title">Ringkasan penjualan per kategori</div>
         </div>
@@ -1668,7 +1610,7 @@
       </div>
 
       <!-- TAB SEMUA PESANAN -->
-      <div id="tab-pesanan" class="tab-content">
+      <div id="content-pesanan" class="tab-content">
         <div class="section-header">
           <div class="section-title">Daftar pesanan</div>
         </div>

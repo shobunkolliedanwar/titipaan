@@ -640,6 +640,7 @@
     }
 
     @media print {
+
       .header,
       .tabs,
       .filter-bar,
@@ -1414,9 +1415,13 @@
         🗑 Hapus
       </button>
 
+      <button class="btn btn-accent" onclick="printStruk('${o.id}')">
+        🧾 Struk
+      </button>
+
       ${o.bukti ? `
         <button class="btn btn-accent" onclick="lihatBukti('${o.bukti}')">
-          🧾 Bukti
+          📸 Bukti
         </button>
       ` : ``}
     </div>
@@ -1521,14 +1526,42 @@
       }
     };
 
-    window.cycleStatus = function (id, current) {
-      let next = "menunggu";
+    window.printStruk = function (orderId) {
+      const order = allOrders.find(o => o.id === orderId);
+      if (!order) return;
 
-      if (current === "menunggu") next = "lunas";
-      else if (current === "lunas") next = "batal";
-      else next = "menunggu";
+      const itemsByKat = {};
+      (order.items || []).forEach(item => {
+        const kat = item.kategori || "Lainnya";
+        if (!itemsByKat[kat]) itemsByKat[kat] = [];
+        itemsByKat[kat].push(item);
+      });
 
-      window.setStatus(id, next);
+      // Build items HTML
+      let itemsHTML = '';
+      Object.entries(itemsByKat).forEach(([kategori, items]) => {
+        itemsHTML += '<div class="kategori-header">' + kategori + '</div>';
+        items.forEach(item => {
+          const itemTotal = (item.sub || 0).toLocaleString('id-ID');
+          const itemPrice = (item.harga || 0).toLocaleString('id-ID');
+          const ukuranStr = item.ukuran ? ' | Uk: ' + item.ukuran : '';
+          const warnaStr = item.warna ? ' | Wr: ' + item.warna : '';
+          itemsHTML += '<div class="item-row"><div class="item-detail">' + item.nama + '<br><span style="font-size: 10px; color: #666;">' + item.qty + 'x @ Rp' + itemPrice + ukuranStr + warnaStr + '</span></div><div class="item-harga">Rp' + itemTotal + '</div></div>';
+        });
+      });
+
+      const subtotal = (order.items?.reduce((sum, i) => sum + (i.sub || 0), 0) || 0).toLocaleString('id-ID');
+      const total = (order.totalBayar || 0).toLocaleString('id-ID');
+      const tanggal = order.createdAt?.toDate?.().toLocaleDateString('id-ID') || '-';
+      const waktu = order.createdAt?.toDate?.().toLocaleTimeString('id-ID') || '-';
+      const statusText = order.status === 'lunas' ? '✓ LUNAS' : order.status === 'batal' ? '✗ DIBATALKAN' : '⏳ MENUNGGU KONFIRMASI';
+      const printTime = new Date().toLocaleString('id-ID');
+
+      const strukHTML = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk - ' + order.kode + '</title><style>body{font-family:"Courier New",monospace;max-width:400px;margin:0 auto;padding:10px;background:white}.struk{border:2px solid #000;padding:15px;background:white}.header{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px}.store-name{font-size:20px;font-weight:bold;margin-bottom:5px}.store-info{font-size:11px;line-height:1.4;color:#333}.invoice-info{font-size:12px;margin:10px 0;border-bottom:1px dashed #000;padding-bottom:10px}.invoice-row{display:flex;justify-content:space-between;margin:3px 0}.label{font-weight:bold}.customer-info{font-size:11px;margin:10px 0;padding:10px;border:1px solid #000;background:#f9f9f9}.items-section{margin:15px 0}.kategori-header{font-weight:bold;margin-top:10px;margin-bottom:5px;font-size:12px;text-decoration:underline}.item-row{font-size:11px;margin:4px 0;display:flex;justify-content:space-between}.item-detail{flex:1}.item-harga{text-align:right;min-width:80px}.total-section{border-top:2px solid #000;border-bottom:2px solid #000;padding:10px 0;margin:10px 0;text-align:right}.total-row{display:flex;justify-content:space-between;font-size:12px;margin:5px 0}.grand-total{font-weight:bold;font-size:14px;margin-top:10px}.payment-method{font-size:11px;text-align:center;margin:10px 0;padding:10px;background:#f0f0f0}.footer{text-align:center;font-size:10px;margin-top:15px;padding-top:10px;border-top:1px dashed #000}.status-badge{text-align:center;font-size:12px;font-weight:bold;margin:10px 0;padding:8px;background:#e8f5e9;border:1px solid #4caf80}@media print{body{margin:0;padding:5px}.struk{border:none;box-shadow:none}}</style></head><body><div class="struk"><div class="header"><div class="store-name">👗 Titipaan</div><div class="store-info">Toko Pakaian Online<br>Jl. Fashion No. 123<br>Jakarta, Indonesia<br>WA: 081234567890</div></div><div class="invoice-info"><div class="invoice-row"><span class="label">Kode Pesanan:</span><span>' + order.kode + '</span></div><div class="invoice-row"><span class="label">Tanggal:</span><span>' + tanggal + '</span></div><div class="invoice-row"><span class="label">Waktu:</span><span>' + waktu + '</span></div></div><div class="customer-info"><div><strong>PEMESAN:</strong></div><div>' + order.nama + '</div><div style="margin-top: 5px; font-size: 10px;">WA: ' + order.telp + '</div><div style="margin-top: 5px; font-size: 10px;">📍 ' + order.alamat + '</div></div><div class="items-section"><div style="text-align: center; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px;">DETAIL PESANAN</div>' + itemsHTML + '</div><div class="total-section"><div class="total-row"><span>Subtotal:</span><span>Rp' + subtotal + '</span></div><div class="total-row grand-total"><span>TOTAL BAYAR:</span><span>Rp' + total + '</span></div></div><div class="payment-method"><strong>Metode Pembayaran:</strong><br>QRIS / Transfer Bank</div><div class="status-badge">Status: ' + statusText + '</div><div class="footer"><div style="margin-bottom: 10px;">━━━━━━━━━━━━━━━━━━</div><div style="font-size: 11px; line-height: 1.5;">Terima kasih telah berbelanja<br>di Titipaan! 🙏<br><br>Semoga puas dengan produk kami<br>dan tunggu koleksi terbaru! 👗</div><div style="margin-top: 10px; font-size: 10px; color: #999;">Dicetak: ' + printTime + '</div></div></div><script>window.addEventListener("load",function(){setTimeout(()=>window.print(),500)});<\/script></body></html>';
+
+      const win = window.open('', '_blank');
+      win.document.write(strukHTML);
+      win.document.close();
     };
   </script>
 

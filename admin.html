@@ -1485,7 +1485,7 @@
       });
 
       // Render cards
-      const rendered = ALL_KATEGORI.map(k => {
+      let rendered = ALL_KATEGORI.map(k => {
         const data = kategoriData[k.id];
         const items = Object.entries(data.items);
 

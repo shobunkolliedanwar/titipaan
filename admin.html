@@ -640,6 +640,7 @@
     }
 
     @media print {
+
       .header,
       .tabs,
       .filter-bar,
@@ -866,8 +867,10 @@
     function renderEditTotal() {
       let total = 0;
 
-      editingOrder.items.forEach(i => {
-        total += i.harga * i.qty;
+      (editingOrder.items || []).forEach(i => {
+        const harga = i.harga || 0;
+        const qty = i.qty || 0;
+        total += harga * qty;
       });
 
       editingOrder.totalBayar = total;
@@ -1247,7 +1250,7 @@
           }
 
           existing.items.push(item);
-          existing.total += item.sub;
+          existing.total += item.sub || 0;
         });
       });
 
@@ -1378,14 +1381,14 @@
               <span>${i.nama} x ${i.qty}</span>
               <span>Rp. ${fmt(i.sub)}</span>
             </div>
-            ${i.ukuran ? `<div style="font-size:11px; color:var(--muted)">📏 ${i.ukuran} | 🎨 ${i.warna}</div>` : ''}
+            ${i.ukuran ? `<div style="font-size:11px; color:var(--muted);">📏 ${i.ukuran} | 🎨 ${i.warna || '-'}</div>` : ''}
           `).join("")}
         </div>
       `).join("")}
 
       <div class="order-total-bar">
         <span>Total</span>
-        <span>Rp. ${fmt(o.totalBayar)}</span>
+        <span>Rp. ${fmt(o.totalBayar || 0)}</span>
       </div>
 
     </div>
@@ -1432,7 +1435,37 @@
       if (!container) return;
 
       const kategoriData = {};
+      const allItemsByKategori = {};
 
+      // Collect all items grouped by kategori dari orders
+      getFilteredOrders()
+        .filter(o => o.status !== "batal")
+        .forEach(order => {
+          (order.items || []).forEach(item => {
+            const kategoriNama = item.kategori || "Lainnya";
+
+            if (!allItemsByKategori[kategoriNama]) {
+              allItemsByKategori[kategoriNama] = {
+                total: 0,
+                items: {}
+              };
+            }
+
+            if (!allItemsByKategori[kategoriNama].items[item.nama]) {
+              allItemsByKategori[kategoriNama].items[item.nama] = {
+                qty: 0,
+                total: 0
+              };
+            }
+
+            allItemsByKategori[kategoriNama].items[item.nama].qty += item.qty;
+            allItemsByKategori[kategoriNama].items[item.nama].total += item.sub;
+
+            allItemsByKategori[kategoriNama].total += item.sub;
+          });
+        });
+
+      // Initialize ALL_KATEGORI data
       ALL_KATEGORI.forEach(k => {
         kategoriData[k.id] = {
           ...k,
@@ -1441,34 +1474,18 @@
         };
       });
 
-      getFilteredOrders()
-        .filter(o => o.status !== "batal")
-        .forEach(order => {
-          (order.items || []).forEach(item => {
-            const kategoriNama = item.kategori;
+      // Merge dengan allItemsByKategori berdasarkan nama
+      ALL_KATEGORI.forEach(k => {
+        if (allItemsByKategori[k.nama]) {
+          kategoriData[k.id] = {
+            ...kategoriData[k.id],
+            ...allItemsByKategori[k.nama]
+          };
+        }
+      });
 
-            const kat = ALL_KATEGORI.find(k => k.nama === kategoriNama);
-
-            if (!kat) {
-              console.warn("Kategori tidak ditemukan:", kategoriNama);
-              return;
-            }
-
-            if (!kategoriData[kat.id].items[item.nama]) {
-              kategoriData[kat.id].items[item.nama] = {
-                qty: 0,
-                total: 0
-              };
-            }
-
-            kategoriData[kat.id].items[item.nama].qty += item.qty;
-            kategoriData[kat.id].items[item.nama].total += item.sub;
-
-            kategoriData[kat.id].total += item.sub;
-          });
-        });
-
-      container.innerHTML = ALL_KATEGORI.map(k => {
+      // Render cards
+      const rendered = ALL_KATEGORI.map(k => {
         const data = kategoriData[k.id];
         const items = Object.entries(data.items);
 
@@ -1506,6 +1523,36 @@
       </div>
     `;
       }).join("");
+
+      // Add "Lainnya" category jika ada items yang tidak cocok
+      if (allItemsByKategori["Lainnya"] || allItemsByKategori[undefined]) {
+        const lainnyaData = allItemsByKategori["Lainnya"] || allItemsByKategori[undefined] || { total: 0, items: {} };
+        const items = Object.entries(lainnyaData.items);
+
+        if (items.length > 0) {
+          rendered += `
+        <div class="kategori-rekap-card">
+          <div class="kategori-rekap-header">
+            <span class="kategori-rekap-icon">📦</span>
+            <div>
+              <div class="kategori-rekap-nama">Lainnya</div>
+              <div class="kategori-rekap-total">Rp${fmt(lainnyaData.total)}</div>
+            </div>
+          </div>
+
+          ${items.map(([nama, v]) => `
+            <div class="kategori-rekap-item">
+              <span class="kategori-rekap-item-nama">${nama}</span>
+              <span class="kategori-rekap-item-qty">x${v.qty}</span>
+              <span class="kategori-rekap-item-total">Rp${fmt(v.total)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+        }
+      }
+
+      container.innerHTML = rendered;
     }
 
     /* =========================

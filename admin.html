@@ -1156,6 +1156,7 @@
         <table>
           <tr>
             <th>No</th>
+            <th>Tanggal</th>
             <th>Nama</th>
             <th>Pesanan</th>
             <th>Total</th>
@@ -1163,7 +1164,7 @@
       `;
 
           data[toko].forEach((order, i) => {
-
+            console.log("order : ", order);
             const itemsText = order.items
               .map(it => `${it.nama} x${it.qty}`)
               .join(", ");

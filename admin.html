@@ -1168,7 +1168,7 @@
               .map(it => `${it.nama} x${it.qty}`)
               .join(", ");
 
-            const tanggal = order.createdAt
+            const tanggal = order.createdAt?.toDate
               ? order.createdAt.toDate().toLocaleString("id-ID", {
                 day: "2-digit",
                 month: "2-digit",
@@ -1417,6 +1417,7 @@
           if (!existing) {
             existing = {
               id: order.id,
+              createdAt: order.createdAt,
               nama: order.nama,
               items: [],
               total: 0

@@ -39,6 +39,189 @@
       /* visibility: hidden; */
     }
 
+    /* MODAL PENGUMUMAN PENUTUPAN */
+    #closure-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .closure-card {
+      background: var(--surface);
+      padding: 3rem 2rem;
+      border-radius: var(--radius);
+      border: 2px solid var(--accent);
+      box-shadow: 0 30px 60px rgba(200, 80, 42, 0.15);
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      animation: slideUp 0.4s ease-out;
+      position: relative;
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+
+    .closure-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), #ff6b5b);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .closure-emoji {
+      font-size: 60px;
+      margin-bottom: 20px;
+      display: inline-block;
+      animation: gentle-float 3s ease-in-out infinite;
+    }
+
+    @keyframes gentle-float {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .closure-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 15px;
+      line-height: 1.2;
+    }
+
+    .closure-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .closure-message {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 25px;
+      text-align: left;
+      background: var(--bg);
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid var(--accent);
+    }
+
+    .closure-dates {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 25px 0;
+      flex-wrap: wrap;
+    }
+
+    .closure-date-box {
+      text-align: center;
+    }
+
+    .closure-date-box .label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .closure-date-box .date {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .closure-footer {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+
+    .btn-closure {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+      transition: 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-closure:hover {
+      background: #b63d1f;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(200, 80, 42, 0.3);
+    }
+
+    .btn-closure:active {
+      transform: translateY(0);
+    }
+
     /* OVERLAY TUTUP */
     #closed-overlay {
       position: fixed;
@@ -64,6 +247,50 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
       max-width: 400px;
       width: 100%;
+    }
+
+    /* RESPONSIVE CLOSURE MODAL */
+    @media (max-height: 700px) {
+      .closure-card {
+        padding: 2rem 1.5rem;
+        max-height: 95vh;
+      }
+
+      .closure-emoji {
+        font-size: 50px;
+        margin-bottom: 15px;
+      }
+
+      .closure-title {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      .closure-message {
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 15px;
+        padding: 15px;
+      }
+
+      .closure-dates {
+        gap: 20px;
+        margin: 15px 0;
+      }
+
+      .closure-date-box .date {
+        font-size: 16px;
+      }
+
+      .closure-footer {
+        font-size: 12px;
+        margin-bottom: 15px;
+      }
+
+      .btn-closure {
+        padding: 12px;
+        font-size: 14px;
+      }
     }
 
     /* MODAL QRIS */
@@ -405,6 +632,48 @@
 
 <body>
 
+  <!-- MODAL PENGUMUMAN PENUTUPAN PERMANEN -->
+  <div id="closure-modal">
+    <div class="closure-card">
+      <div class="closure-emoji">💔</div>
+      <div class="closure-title">Ini Saatnya Berpisah...</div>
+      <div class="closure-subtitle">Pesan dari Aan</div>
+
+      <div class="closure-message">
+        Teman-teman kantor yang luar biasa,
+        <br><br>
+        Dengan hati yang berat, saya harus memberitahu bahwa <strong>Titipaan akan tutup selamanya</strong> mulai 15
+        Juli 2026.
+        <br><br>
+        Selama ini, kepercayaan kalian adalah energi terbesar saya. Setiap pesanan, setiap "terima kasih", setiap kali
+        kalian milih Titipaan itu semua berarti dunia bagi saya.
+        <br><br>
+        Saya berterima kasih yang sebesar-besarnya telah menjadi bagian dari hari-hari kalian. Kalian tidak hanya
+        pelanggan, tapi juga teman yang luar biasa. 🙏
+      </div>
+
+      <div class="closure-dates">
+        <div class="closure-date-box">
+          <div class="label">Pesanan Terakhir</div>
+          <div class="date">14 Juli 2026</div>
+        </div>
+        <div class="closure-date-box">
+          <div class="label">Tutup Permanen</div>
+          <div class="date">15 Juli 2026</div>
+        </div>
+      </div>
+
+      <div class="closure-footer">
+        Terakhir kali, mari kita pesan bersama sebelum tiba saatnya. Terima kasih untuk semua kenangan indahnya. Sampai
+        jumpa! 💚
+      </div>
+
+      <button class="btn-closure" onclick="closeClosureModal()">
+        Saya Mengerti Aan 💚
+      </button>
+    </div>
+  </div>
+
   <div id="closed-overlay">
     <div class="closed-card">
       <div style="font-size: 70px; margin-bottom: 15px;">😴</div>
@@ -596,6 +865,17 @@
     const ONGKIR = 2000;
     const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpu7jpybe/image/upload";
     const UPLOAD_PRESET = "titipaan";
+
+    // ============ CLOSURE MODAL LOGIC ============
+    const closureModal = document.getElementById('closure-modal');
+
+    // Popup selalu ditampilkan
+    closureModal.style.display = 'flex';
+
+    // Function untuk close modal
+    window.closeClosureModal = function () {
+      closureModal.style.display = 'none';
+    };
 
     const TOKO_SIANG = [
       {

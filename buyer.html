@@ -321,6 +321,20 @@
       padding: 30px;
     }
 
+    .farewell-text {
+      margin-top: 20px;
+      font-family: 'Syne';
+      font-size: 28px;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity .8s;
+      white-space: pre-line;
+    }
+
+    .farewell-text.show {
+      opacity: 1;
+    }
+
     .farewell-heart {
       font-size: 60px;
       margin-bottom: 25px;
@@ -743,14 +757,16 @@
   </div>
 
   <div id="farewell-screen">
-    <div class="farewell-content">
-      <div class="farewell-heart">❤️</div>
+    <div>
+      <div class="farewell-content">
 
-      <h2>Terima kasih...</h2>
+        <div class="farewell-heart">❤️</div>
 
-      <p>
-        karena pernah menjadi bagian dari perjalanan Titipaan.
-      </p>
+        <div id="farewell-text" class="farewell-text">
+          Terima kasih...
+        </div>
+
+      </div>
     </div>
   </div>
 
@@ -949,6 +965,22 @@
     // ============ CLOSURE MODAL LOGIC ============
     const closureModal = document.getElementById('closure-modal');
 
+    const farewellMessages = [
+      "❤️\nTerima kasih...",
+
+      "🍱\nUntuk setiap pesanan...",
+
+      "😊\nUntuk setiap obrolan...",
+
+      "🤝\nUntuk setiap kepercayaan...",
+
+      "💚\nKalian bukan sekadar pelanggan...",
+
+      "✨\nKalian adalah bagian dari perjalanan Titipaan.",
+
+      "🙏\nSampai jumpa,\nteman-teman."
+    ];
+
     closureModal.style.display = 'flex';
 
     window.closeClosureModal = async function () {
@@ -956,9 +988,11 @@
       closureModal.style.display = "none";
 
       const farewell = document.getElementById("farewell-screen");
+      const text = document.getElementById("farewell-text");
 
       farewell.classList.add("show");
 
+      // mulai lagu
       const music = document.getElementById("bgMusic");
 
       music.volume = 0;
@@ -969,6 +1003,7 @@
         let volume = 0;
 
         const fade = setInterval(() => {
+
           volume += 0.02;
 
           if (volume >= 0.25) {
@@ -982,9 +1017,37 @@
 
       } catch (e) { }
 
-      setTimeout(() => {
-        farewell.classList.remove("show");
-      }, 5000);
+      // animasi tulisan
+      let index = 0;
+
+      function showNext() {
+
+        if (index >= farewellMessages.length) {
+
+          setTimeout(() => {
+            farewell.classList.remove("show");
+          }, 2000);
+
+          return;
+        }
+
+        text.classList.remove("show");
+
+        setTimeout(() => {
+
+          text.innerHTML = farewellMessages[index];
+
+          text.classList.add("show");
+
+          index++;
+
+          setTimeout(showNext, 2500);
+
+        }, 500);
+
+      }
+
+      showNext();
 
     };
 
@@ -1480,7 +1543,6 @@
 
       const TOKO = currentTab === "siang" ? TOKO_SIANG : TOKO_SORE;
 
-      // 🔥 kalau tab sore & belum ada toko
       if (currentTab === "sore" && TOKO.length === 0) {
         container.innerHTML = `
           <div style="

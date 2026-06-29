@@ -293,6 +293,64 @@
       }
     }
 
+    #farewell-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .92);
+      color: white;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      z-index: 99999;
+
+      opacity: 0;
+      visibility: hidden;
+      transition: .8s;
+    }
+
+    #farewell-screen.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .farewell-content {
+      text-align: center;
+      max-width: 500px;
+      padding: 30px;
+    }
+
+    .farewell-heart {
+      font-size: 60px;
+      margin-bottom: 25px;
+      animation: pulseHeart 1.8s infinite;
+    }
+
+    .farewell-content h2 {
+      font-family: 'Syne';
+      font-size: 38px;
+      margin-bottom: 18px;
+    }
+
+    .farewell-content p {
+      font-size: 18px;
+      line-height: 1.8;
+      color: #ddd;
+    }
+
+    @keyframes pulseHeart {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.08);
+      }
+    }
+
     /* MODAL QRIS */
     #qris-modal {
       display: none;
@@ -631,6 +689,9 @@
 </head>
 
 <body>
+  <audio id="bgMusic" preload="auto" loop>
+    <source src="sampai-jumpa.mp3" type="audio/mpeg">
+  </audio>
 
   <!-- MODAL PENGUMUMAN PENUTUPAN PERMANEN -->
   <div id="closure-modal">
@@ -671,6 +732,25 @@
       <button class="btn-closure" onclick="closeClosureModal()">
         Saya Mengerti Aan 💚
       </button>
+      <p style="
+          margin-top:15px;
+          font-size:12px;
+          color:#888;
+          font-style:italic;">
+        🎵 Lagu akan diputar setelah kamu menutup pesan ini.
+      </p>
+    </div>
+  </div>
+
+  <div id="farewell-screen">
+    <div class="farewell-content">
+      <div class="farewell-heart">❤️</div>
+
+      <h2>Terima kasih...</h2>
+
+      <p>
+        karena pernah menjadi bagian dari perjalanan Titipaan.
+      </p>
     </div>
   </div>
 
@@ -869,12 +949,43 @@
     // ============ CLOSURE MODAL LOGIC ============
     const closureModal = document.getElementById('closure-modal');
 
-    // Popup selalu ditampilkan
     closureModal.style.display = 'flex';
 
-    // Function untuk close modal
-    window.closeClosureModal = function () {
-      closureModal.style.display = 'none';
+    window.closeClosureModal = async function () {
+
+      closureModal.style.display = "none";
+
+      const farewell = document.getElementById("farewell-screen");
+
+      farewell.classList.add("show");
+
+      const music = document.getElementById("bgMusic");
+
+      music.volume = 0;
+
+      try {
+        await music.play();
+
+        let volume = 0;
+
+        const fade = setInterval(() => {
+          volume += 0.02;
+
+          if (volume >= 0.25) {
+            volume = 0.25;
+            clearInterval(fade);
+          }
+
+          music.volume = volume;
+
+        }, 300);
+
+      } catch (e) { }
+
+      setTimeout(() => {
+        farewell.classList.remove("show");
+      }, 5000);
+
     };
 
     const TOKO_SIANG = [
